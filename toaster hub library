@@ -1,4 +1,4 @@
--- Toaster Hub Library (Updated)
+-- Toaster Hub Library (Updated with Scrolling Tabs)
 
 local Library = {
     Theme = {
@@ -164,10 +164,24 @@ function Library:CreateWindow(name, size, position)
         Tab.Frame.Visible = (#Window.Tabs == 0)
         Tab.Frame.Parent = Window.MainFrame
 
+        -- Scrolling Frame for Tab Content
+        Tab.ScrollingFrame = Instance.new("ScrollingFrame")
+        Tab.ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+        Tab.ScrollingFrame.Position = UDim2.new(0, 0, 0, 0)
+        Tab.ScrollingFrame.BackgroundTransparency = 1
+        Tab.ScrollingFrame.ScrollBarThickness = 5
+        Tab.ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
+        Tab.ScrollingFrame.Parent = Tab.Frame
+
         local tabLayout = Instance.new("UIListLayout")
         tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        tabLayout.Padding = UDim.new(0, 5)
-        tabLayout.Parent = Tab.Frame
+        tabLayout.Padding = UDim.new(0, 8) -- Increased padding for better spacing
+        tabLayout.Parent = Tab.ScrollingFrame
+
+        -- Update CanvasSize when elements are added
+        tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Tab.ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y)
+        end)
 
         -- Tab Switching
         Tab.Button.MouseButton1Click:Connect(function()
@@ -186,7 +200,7 @@ function Library:CreateWindow(name, size, position)
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.Parent = Tab.Frame
+            Label.Parent = Tab.ScrollingFrame
             table.insert(Tab.Elements, Label)
             return Label
         end
@@ -199,7 +213,7 @@ function Library:CreateWindow(name, size, position)
             Button.TextColor3 = Library.Theme.TextColor
             Button.Font = Library.Theme.Font
             Button.TextSize = Library.Theme.TextSize
-            Button.Parent = Tab.Frame
+            Button.Parent = Tab.ScrollingFrame
             Button.MouseButton1Click:Connect(callback)
             table.insert(Tab.Elements, Button)
             return Button
@@ -213,7 +227,7 @@ function Library:CreateWindow(name, size, position)
             Toggle.TextColor3 = Library.Theme.TextColor
             Toggle.Font = Library.Theme.Font
             Toggle.TextSize = Library.Theme.TextSize
-            Toggle.Parent = Tab.Frame
+            Toggle.Parent = Tab.ScrollingFrame
 
             local state = default
             Toggle.MouseButton1Click:Connect(function()
@@ -233,7 +247,7 @@ function Library:CreateWindow(name, size, position)
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.Parent = Tab.Frame
+            Label.Parent = Tab.ScrollingFrame
 
             local Textbox = Instance.new("TextBox")
             Textbox.Size = UDim2.new(0, 100, 0, 30)
@@ -260,7 +274,7 @@ function Library:CreateWindow(name, size, position)
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.Parent = Tab.Frame
+            Label.Parent = Tab.ScrollingFrame
 
             local Dropdown = Instance.new("TextButton")
             Dropdown.Size = UDim2.new(0, 100, 0, 30)
@@ -279,6 +293,7 @@ function Library:CreateWindow(name, size, position)
             DropdownFrame.Visible = false
             DropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
             DropdownFrame.ScrollBarThickness = 5
+            DropdownFrame.ZIndex = 10 -- Ensure dropdown appears above other elements
             DropdownFrame.Parent = Label
 
             local dropdownLayout = Instance.new("UIListLayout")
@@ -293,6 +308,7 @@ function Library:CreateWindow(name, size, position)
                 OptionButton.TextColor3 = Library.Theme.TextColor
                 OptionButton.Font = Library.Theme.Font
                 OptionButton.TextSize = Library.Theme.TextSize
+                OptionButton.ZIndex = 10
                 OptionButton.Parent = DropdownFrame
 
                 OptionButton.MouseButton1Click:Connect(function()
@@ -305,7 +321,7 @@ function Library:CreateWindow(name, size, position)
             Dropdown.MouseButton1Click:Connect(function()
                 DropdownFrame.Visible = not DropdownFrame.Visible
                 -- Close other dropdowns in the same tab
-                for _, child in pairs(Tab.Frame:GetChildren()) do
+                for _, child in pairs(Tab.ScrollingFrame:GetChildren()) do
                     if child:IsA("TextLabel") then
                         for _, subChild in pairs(child:GetChildren()) do
                             if subChild:IsA("ScrollingFrame") and subChild ~= DropdownFrame then
