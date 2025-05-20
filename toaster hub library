@@ -1,4 +1,4 @@
--- Toaster Hub Library (Updated with Dynamic Dropdown Padding and Textbox Fixes)
+-- Toaster Hub Library (Updated to Fix Disappearing Textboxes)
 
 local Library = {
     Theme = {
@@ -247,19 +247,33 @@ function Library:CreateWindow(name, size, position)
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.ClipsDescendants = true -- Ensure text doesn't run out of bounds
+            Label.ClipsDescendants = true
+            Label.Visible = true -- Ensure the label remains visible
             Label.Parent = Tab.ScrollingFrame
 
             local Textbox = Instance.new("TextBox")
-            Textbox.Size = UDim2.new(0, 150, 0, 30) -- Increased width to 150 pixels
+            Textbox.Size = UDim2.new(0, 150, 0, 30)
             Textbox.Position = UDim2.new(0, 110, 0, 0)
             Textbox.BackgroundColor3 = Library.Theme.SecondaryColor
-            Textbox.Text = default
+            Textbox.Text = default or ""
             Textbox.TextColor3 = Library.Theme.TextColor
             Textbox.Font = Library.Theme.Font
             Textbox.TextSize = Library.Theme.TextSize
-            Textbox.TextWrapped = true -- Wrap text to prevent overflow
+            Textbox.TextWrapped = true
+            Textbox.Visible = true -- Ensure the textbox remains visible
             Textbox.Parent = Label
+
+            -- Safety check to prevent disappearing
+            Textbox:GetPropertyChangedSignal("Visible"):Connect(function()
+                if not Textbox.Visible then
+                    Textbox.Visible = true
+                end
+            end)
+            Label:GetPropertyChangedSignal("Visible"):Connect(function()
+                if not Label.Visible then
+                    Label.Visible = true
+                end
+            end)
 
             Textbox.FocusLost:Connect(function()
                 callback(Textbox.Text)
@@ -316,7 +330,6 @@ function Library:CreateWindow(name, size, position)
                 OptionButton.MouseButton1Click:Connect(function()
                     Dropdown.Text = option
                     DropdownFrame.Visible = false
-                    -- Restore original padding when dropdown closes
                     tabLayout.Padding = UDim.new(0, 8)
                     callback(option)
                 end)
@@ -325,7 +338,6 @@ function Library:CreateWindow(name, size, position)
             Dropdown.MouseButton1Click:Connect(function()
                 local isVisible = not DropdownFrame.Visible
                 DropdownFrame.Visible = isVisible
-                -- Close other dropdowns in the same tab and manage padding
                 for _, child in pairs(Tab.ScrollingFrame:GetChildren()) do
                     if child:IsA("TextLabel") then
                         for _, subChild in pairs(child:GetChildren()) do
@@ -335,11 +347,10 @@ function Library:CreateWindow(name, size, position)
                         end
                     end
                 end
-                -- Dynamically adjust padding based on dropdown state
                 if isVisible then
-                    tabLayout.Padding = UDim.new(0, 130) -- Increase padding to accommodate dropdown height
+                    tabLayout.Padding = UDim.new(0, 130)
                 else
-                    tabLayout.Padding = UDim.new(0, 8) -- Restore default padding
+                    tabLayout.Padding = UDim.new(0, 8)
                 end
             end)
             table.insert(Tab.Elements, Label)
