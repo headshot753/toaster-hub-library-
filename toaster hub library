@@ -1,4 +1,4 @@
--- Toaster Hub Library (Updated with Scrolling Tabs)
+-- Toaster Hub Library (Updated with Dynamic Dropdown Padding and Textbox Fixes)
 
 local Library = {
     Theme = {
@@ -175,7 +175,7 @@ function Library:CreateWindow(name, size, position)
 
         local tabLayout = Instance.new("UIListLayout")
         tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        tabLayout.Padding = UDim.new(0, 8) -- Increased padding for better spacing
+        tabLayout.Padding = UDim.new(0, 8) -- Default padding
         tabLayout.Parent = Tab.ScrollingFrame
 
         -- Update CanvasSize when elements are added
@@ -247,16 +247,18 @@ function Library:CreateWindow(name, size, position)
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
+            Label.ClipsDescendants = true -- Ensure text doesn't run out of bounds
             Label.Parent = Tab.ScrollingFrame
 
             local Textbox = Instance.new("TextBox")
-            Textbox.Size = UDim2.new(0, 100, 0, 30)
+            Textbox.Size = UDim2.new(0, 150, 0, 30) -- Increased width to 150 pixels
             Textbox.Position = UDim2.new(0, 110, 0, 0)
             Textbox.BackgroundColor3 = Library.Theme.SecondaryColor
             Textbox.Text = default
             Textbox.TextColor3 = Library.Theme.TextColor
             Textbox.Font = Library.Theme.Font
             Textbox.TextSize = Library.Theme.TextSize
+            Textbox.TextWrapped = true -- Wrap text to prevent overflow
             Textbox.Parent = Label
 
             Textbox.FocusLost:Connect(function()
@@ -293,7 +295,7 @@ function Library:CreateWindow(name, size, position)
             DropdownFrame.Visible = false
             DropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
             DropdownFrame.ScrollBarThickness = 5
-            DropdownFrame.ZIndex = 10 -- Ensure dropdown appears above other elements
+            DropdownFrame.ZIndex = 10
             DropdownFrame.Parent = Label
 
             local dropdownLayout = Instance.new("UIListLayout")
@@ -314,13 +316,16 @@ function Library:CreateWindow(name, size, position)
                 OptionButton.MouseButton1Click:Connect(function()
                     Dropdown.Text = option
                     DropdownFrame.Visible = false
+                    -- Restore original padding when dropdown closes
+                    tabLayout.Padding = UDim.new(0, 8)
                     callback(option)
                 end)
             end
 
             Dropdown.MouseButton1Click:Connect(function()
-                DropdownFrame.Visible = not DropdownFrame.Visible
-                -- Close other dropdowns in the same tab
+                local isVisible = not DropdownFrame.Visible
+                DropdownFrame.Visible = isVisible
+                -- Close other dropdowns in the same tab and manage padding
                 for _, child in pairs(Tab.ScrollingFrame:GetChildren()) do
                     if child:IsA("TextLabel") then
                         for _, subChild in pairs(child:GetChildren()) do
@@ -329,6 +334,12 @@ function Library:CreateWindow(name, size, position)
                             end
                         end
                     end
+                end
+                -- Dynamically adjust padding based on dropdown state
+                if isVisible then
+                    tabLayout.Padding = UDim.new(0, 130) -- Increase padding to accommodate dropdown height
+                else
+                    tabLayout.Padding = UDim.new(0, 8) -- Restore default padding
                 end
             end)
             table.insert(Tab.Elements, Label)
