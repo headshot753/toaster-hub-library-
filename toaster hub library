@@ -1,4 +1,4 @@
---// Toaster Hub Library – Side Tabs & Mobile-Responsive UI (Part 1/2)
+--// Toaster Hub Library – Side Tabs & Mobile Responsive (Part 1/2)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.4"
+    Version = "2.5"
 }
 
 print("Toaster Hub Library v" .. Library.Version .. " loaded")
@@ -25,8 +25,8 @@ function Library:CreateWindow(name)
     Window.Tabs = {}
 
     local screenSize = workspace.CurrentCamera.ViewportSize
-    local width = math.clamp(screenSize.X * 0.8, 300, 700)
-    local height = math.clamp(screenSize.Y * 0.75, 300, 500)
+    local width = math.clamp(screenSize.X * 0.8, 320, 700)
+    local height = math.clamp(screenSize.Y * 0.75, 360, 600)
 
     Window.Size = UDim2.new(0, width, 0, height)
     Window.Position = UDim2.new(0.5, -width / 2, 0.5, -height / 2)
@@ -105,7 +105,7 @@ function Library:CreateWindow(name)
     Window.TabContainer.BorderSizePixel = 0
     Window.TabContainer.Parent = contentFrame
 
-    -- Drag
+    -- Dragging Logic
     local dragging, dragStart, startPos
     Window.TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -114,6 +114,7 @@ function Library:CreateWindow(name)
             startPos = Window.MainFrame.Position
         end
     end)
+
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
@@ -123,10 +124,12 @@ function Library:CreateWindow(name)
             )
         end
     end)
+
     UserInputService.InputEnded:Connect(function()
         dragging = false
     end)
 
+    -- Minimize
     Window.MinimizeButton.MouseButton1Click:Connect(function()
         Window.MainFrame.Visible = false
         local restore = Instance.new("TextButton")
@@ -147,11 +150,12 @@ function Library:CreateWindow(name)
         end)
     end)
 
+    -- Close
     Window.CloseButton.MouseButton1Click:Connect(function()
         Window.ScreenGui:Destroy()
     end)
 
-    -- Tabs will be added in Part 2
+    -- Continue to Part 2...
     function Window:AddTab(name)
         local Tab = {}
         Tab.Name = name
@@ -171,8 +175,8 @@ function Library:CreateWindow(name)
         Tab.Frame.Position = UDim2.new(0, 0, 0, 0)
         Tab.Frame.BackgroundTransparency = 1
         Tab.Frame.ScrollBarThickness = 5
-        Tab.Frame.Visible = (#Window.Tabs == 0)
         Tab.Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Tab.Frame.Visible = (#Window.Tabs == 0)
         Tab.Frame.Parent = Window.TabContainer
 
         local layout = Instance.new("UIListLayout")
@@ -191,6 +195,7 @@ function Library:CreateWindow(name)
             Tab.Frame.Visible = true
         end)
 
+        -- Wrapped UI components to avoid overlap
         function Tab:AddLabel(text)
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -20, 0, 30)
@@ -240,7 +245,7 @@ function Library:CreateWindow(name)
 
         function Tab:AddTextbox(text, default, callback)
             local Holder = Instance.new("Frame")
-            Holder.Size = UDim2.new(1, -20, 0, 35)
+            Holder.Size = UDim2.new(1, -20, 0, 40)
             Holder.BackgroundTransparency = 1
             Holder.Parent = Tab.Frame
 
@@ -274,7 +279,7 @@ function Library:CreateWindow(name)
 
         function Tab:AddDropdown(text, options, default, callback)
             local Holder = Instance.new("Frame")
-            Holder.Size = UDim2.new(1, -20, 0, 35)
+            Holder.Size = UDim2.new(1, -20, 0, 40)
             Holder.BackgroundTransparency = 1
             Holder.Parent = Tab.Frame
 
@@ -304,6 +309,7 @@ function Library:CreateWindow(name)
             List.Position = UDim2.new(0.4, 0, 1, 0)
             List.BackgroundColor3 = Library.Theme.SecondaryColor
             List.Visible = false
+            List.ZIndex = 20
             List.Parent = Holder
 
             local layout = Instance.new("UIListLayout", List)
