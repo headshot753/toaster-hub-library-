@@ -1,4 +1,4 @@
---// Toaster Hub Library – Side Tabs, Scrollable Dropdowns, Mobile Ready (Part 1/2)
+-- Toaster Hub Library – Updated (Part 1/2)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.7"
+    Version = "3.0"
 }
 
 print("Toaster Hub Library v" .. Library.Version .. " loaded")
@@ -127,7 +127,7 @@ function Library:CreateWindow(name)
         dragging = false
     end)
 
-    -- Minimize
+    -- Minimize logic
     Window.MinimizeButton.MouseButton1Click:Connect(function()
         Window.MainFrame.Visible = false
         local restore = Instance.new("TextButton")
@@ -148,7 +148,7 @@ function Library:CreateWindow(name)
         end)
     end)
 
-    -- Close
+    -- Close logic
     Window.CloseButton.MouseButton1Click:Connect(function()
         Window.ScreenGui:Destroy()
     end)
@@ -170,9 +170,8 @@ function Library:CreateWindow(name)
 
         Tab.Frame = Instance.new("ScrollingFrame")
         Tab.Frame.Size = UDim2.new(1, 0, 1, 0)
-        Tab.Frame.Position = UDim2.new(0, 0, 0, 0)
         Tab.Frame.BackgroundTransparency = 1
-        Tab.Frame.ScrollBarThickness = 5
+        Tab.Frame.ScrollBarThickness = 6
         Tab.Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
         Tab.Frame.Visible = (#Window.Tabs == 0)
         Tab.Frame.Parent = Window.TabContainer
@@ -203,7 +202,6 @@ function Library:CreateWindow(name)
             Label.TextSize = Library.Theme.TextSize
             Label.TextXAlignment = Enum.TextXAlignment.Left
             Label.Parent = Tab.Frame
-            table.insert(Tab.Elements, Label)
             return Label
         end
 
@@ -217,7 +215,6 @@ function Library:CreateWindow(name)
             Button.TextSize = Library.Theme.TextSize
             Button.Parent = Tab.Frame
             Button.MouseButton1Click:Connect(callback)
-            table.insert(Tab.Elements, Button)
             return Button
         end
 
@@ -236,7 +233,6 @@ function Library:CreateWindow(name)
                 Toggle.Text = state and (text .. ": On") or (text .. ": Off")
                 callback(state)
             end)
-            table.insert(Tab.Elements, Toggle)
             return Toggle
         end
 
@@ -270,7 +266,6 @@ function Library:CreateWindow(name)
                 callback(Box.Text)
             end)
 
-            table.insert(Tab.Elements, Holder)
             return Box
         end
 
@@ -290,7 +285,6 @@ function Library:CreateWindow(name)
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
             Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.ZIndex = 1
             Label.Parent = Holder
 
             local Dropdown = Instance.new("TextButton")
@@ -344,7 +338,6 @@ function Library:CreateWindow(name)
                 DropdownList.Position = UDim2.new(0, Dropdown.AbsolutePosition.X, 0, Dropdown.AbsolutePosition.Y + Dropdown.AbsoluteSize.Y)
             end)
 
-            table.insert(Tab.Elements, Holder)
             return Dropdown
         end
 
