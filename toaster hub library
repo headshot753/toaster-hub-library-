@@ -1,4 +1,4 @@
--- Toaster Hub Library (Fixed Glow Assignment Issue, Enhanced Dropdowns and GUI Layout)
+-- Toaster Hub Library (Fixed AddToggle ImageColor3 Issue, Enhanced Dropdowns and GUI Layout)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.10"
+    Version = "2.11"
 }
 
 -- Debug print to confirm library version
@@ -440,7 +440,7 @@ function Library:CreateWindow(name, size, position)
             end
 
             function Section:AddButton(text, callback)
-                local Button = utility:Create("TextButton", {
+                local Button = utility:Create("ImageButton", {
                     Name = "Button",
                     Parent = Section.ScrollingFrame,
                     BackgroundTransparency = 1,
@@ -475,7 +475,7 @@ function Library:CreateWindow(name, size, position)
             end
 
             function Section:AddToggle(text, default, callback)
-                local Toggle = utility:Create("TextButton", {
+                local Toggle = utility:Create("ImageButton", {
                     Name = "Toggle",
                     Parent = Section.ScrollingFrame,
                     BackgroundTransparency = 1,
