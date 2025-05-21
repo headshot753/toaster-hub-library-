@@ -1,4 +1,4 @@
--- Toaster Hub Library (Fixed Window.Main Issue, Improved Dropdowns and Layout)
+-- Toaster Hub Library (Enhanced Dropdowns and GUI Layout)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.5"
+    Version = "2.7"
 }
 
 -- Debug print to confirm library version
@@ -104,7 +104,7 @@ function Library:CreateWindow(name, size, position)
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     })
 
-    -- Main Frame (explicitly assign to Window.Main)
+    -- Main Frame
     Window.Main = utility:Create("ImageLabel", {
         Name = "Main",
         BackgroundTransparency = 1,
@@ -182,6 +182,31 @@ function Library:CreateWindow(name, size, position)
         })
     })
 
+    -- Create Minimize and Close Buttons
+    Window.Main.TopBar.MinimizeButton = utility:Create("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -60, 0, 0),
+        BackgroundColor3 = Library.Theme.ButtonColor,
+        Text = "-",
+        TextColor3 = Library.Theme.TextColor,
+        Font = Library.Theme.BoldFont,
+        TextSize = Library.Theme.BoldTextSize,
+        ZIndex = 6,
+        Parent = Window.Main.TopBar
+    })
+
+    Window.Main.TopBar.CloseButton = utility:Create("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -30, 0, 0),
+        BackgroundColor3 = Library.Theme.ButtonColor,
+        Text = "X",
+        TextColor3 = Library.Theme.TextColor,
+        Font = Library.Theme.BoldFont,
+        TextSize = Library.Theme.BoldTextSize,
+        ZIndex = 6,
+        Parent = Window.Main.TopBar
+    })
+
     -- Dragging Logic
     local dragging, dragStart, startPos
     Window.Main.TopBar.InputBegan:Connect(function(input)
@@ -204,17 +229,6 @@ function Library:CreateWindow(name, size, position)
     end)
 
     -- Minimize Logic
-    Window.Main.TopBar.MinimizeButton = utility:Create("TextButton", {
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -60, 0, 0),
-        BackgroundColor3 = Library.Theme.ButtonColor,
-        Text = "-",
-        TextColor3 = Library.Theme.TextColor,
-        Font = Library.Theme.BoldFont,
-        TextSize = Library.Theme.BoldTextSize,
-        Parent = Window.Main.TopBar
-    })
-
     Window.Main.TopBar.MinimizeButton.MouseButton1Click:Connect(function()
         Window.Main.Visible = false
         local restoreButton = utility:Create("TextButton", {
@@ -237,17 +251,6 @@ function Library:CreateWindow(name, size, position)
     end)
 
     -- Close Logic
-    Window.Main.TopBar.CloseButton = utility:Create("TextButton", {
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -30, 0, 0),
-        BackgroundColor3 = Library.Theme.ButtonColor,
-        Text = "X",
-        TextColor3 = Library.Theme.TextColor,
-        Font = Library.Theme.BoldFont,
-        TextSize = Library.Theme.BoldTextSize,
-        Parent = Window.Main.TopBar
-    })
-
     Window.Main.TopBar.CloseButton.MouseButton1Click:Connect(function()
         Window.ScreenGui:Destroy()
     end)
@@ -270,6 +273,17 @@ function Library:CreateWindow(name, size, position)
             Text = "",
             TextSize = 14
         }, {
+            utility:Create("ImageLabel", {
+                Name = "Background",
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 1, 0),
+                ZIndex = 2,
+                Image = "rbxassetid://5028857472",
+                ImageColor3 = Color3.new(0, 0, 0),
+                ImageTransparency = 1,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(2, 2, 298, 298)
+            }),
             utility:Create("TextLabel", {
                 Name = "Title",
                 AnchorPoint = Vector2.new(0, 0.5),
@@ -331,14 +345,32 @@ function Library:CreateWindow(name, size, position)
                 if tab.Button:FindFirstChild("Icon") then
                     tab.Button.Icon.ImageTransparency = 0.65
                 end
+                if tab.Button:FindFirstChild("Background") then
+                    utility:Tween(tab.Button.Background, {ImageTransparency = 1}, 0.2)
+                end
+                -- Hide sections with animation
+                for _, section in pairs(tab.Sections or {}) do
+                    utility:Tween(section.Frame, {ImageTransparency = 1}, 0.1)
+                    utility:Tween(section.ScrollingFrame.Title, {TextTransparency = 1}, 0.1)
+                end
             end
             Tab.Frame.Visible = true
             Tab.Button.Title.TextTransparency = 0
             Tab.Button.Title.Font = Library.Theme.BoldFont
             if Tab.Button:FindFirstChild("Icon") then
-                tab.Button.Icon.ImageTransparency = 0
+                Tab.Button.Icon.ImageTransparency = 0
+            end
+            if Tab.Button:FindFirstChild("Background") then
+                utility:Tween(Tab.Button.Background, {ImageTransparency = 0.7}, 0.2)
+            end
+            -- Show sections with animation
+            for _, section in pairs(Tab.Sections or {}) do
+                utility:Tween(section.Frame, {ImageTransparency = 0}, 0.1)
+                utility:Tween(section.ScrollingFrame.Title, {TextTransparency = 0}, 0.1)
             end
         end)
+
+        Tab.Sections = {}
 
         function Tab:AddSection(title)
             local Section = {}
@@ -368,11 +400,12 @@ function Library:CreateWindow(name, size, position)
                         Name = "Title",
                         BackgroundTransparency = 1,
                         Size = UDim2.new(1, 0, 0, 20),
-                        ZIndex = 2,
+                        ZIndex = 3,
                         Font = Library.Theme.BoldFont,
                         Text = title,
                         TextColor3 = Library.Theme.TextColor,
                         TextSize = 14,
+                        TextTransparency = 1, -- Initially transparent
                         TextXAlignment = Enum.TextXAlignment.Left
                     }),
                     utility:Create("UIListLayout", {
@@ -390,7 +423,7 @@ function Library:CreateWindow(name, size, position)
                     Parent = Section.ScrollingFrame,
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, 0, 0, 35),
-                    ZIndex = 2,
+                    ZIndex = 3,
                     Font = Library.Theme.Font,
                     Text = text,
                     TextColor3 = Library.Theme.TextColor,
@@ -408,7 +441,7 @@ function Library:CreateWindow(name, size, position)
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
                     Size = UDim2.new(1, 0, 0, 35),
-                    ZIndex = 2,
+                    ZIndex = 3,
                     Image = "rbxassetid://5028857472",
                     ImageColor3 = Library.Theme.SecondaryColor,
                     ScaleType = Enum.ScaleType.Slice,
@@ -418,7 +451,7 @@ function Library:CreateWindow(name, size, position)
                         Name = "Title",
                         BackgroundTransparency = 1,
                         Size = UDim2.new(1, 0, 1, 0),
-                        ZIndex = 3,
+                        ZIndex = 4,
                         Font = Library.Theme.Font,
                         Text = text,
                         TextColor3 = Library.Theme.TextColor,
@@ -443,7 +476,7 @@ function Library:CreateWindow(name, size, position)
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
                     Size = UDim2.new(1, 0, 0, 35),
-                    ZIndex = 2,
+                    ZIndex = 3,
                     Image = "rbxassetid://5028857472",
                     ImageColor3 = Library.Theme.SecondaryColor,
                     ScaleType = Enum.ScaleType.Slice,
@@ -455,7 +488,7 @@ function Library:CreateWindow(name, size, position)
                         BackgroundTransparency = 1,
                         Position = UDim2.new(0, 10, 0.5, 0),
                         Size = UDim2.new(0.5, 0, 1, 0),
-                        ZIndex = 3,
+                        ZIndex = 4,
                         Font = Library.Theme.Font,
                         Text = text,
                         TextColor3 = Library.Theme.TextColor,
@@ -468,7 +501,7 @@ function Library:CreateWindow(name, size, position)
                         BorderSizePixel = 0,
                         Position = UDim2.new(1, -50, 0.5, -8),
                         Size = UDim2.new(0, 40, 0, 16),
-                        ZIndex = 2,
+                        ZIndex = 3,
                         Image = "rbxassetid://5028857472",
                         ImageColor3 = Library.Theme.PrimaryColor,
                         ScaleType = Enum.ScaleType.Slice,
@@ -479,7 +512,7 @@ function Library:CreateWindow(name, size, position)
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 2, 0.5, -6),
                             Size = UDim2.new(1, -22, 1, -4),
-                            ZIndex = 2,
+                            ZIndex = 4,
                             Image = "rbxassetid://5028857472",
                             ImageColor3 = Library.Theme.TextColor,
                             ScaleType = Enum.ScaleType.Slice,
@@ -516,7 +549,7 @@ function Library:CreateWindow(name, size, position)
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
                     Size = UDim2.new(1, 0, 0, 35),
-                    ZIndex = 2,
+                    ZIndex = 3,
                     Image = "rbxassetid://5028857472",
                     ImageColor3 = Library.Theme.SecondaryColor,
                     ScaleType = Enum.ScaleType.Slice,
@@ -528,7 +561,7 @@ function Library:CreateWindow(name, size, position)
                         BackgroundTransparency = 1,
                         Position = UDim2.new(0, 10, 0.5, 0),
                         Size = UDim2.new(0.5, 0, 1, 0),
-                        ZIndex = 3,
+                        ZIndex = 4,
                         Font = Library.Theme.Font,
                         Text = text,
                         TextColor3 = Library.Theme.TextColor,
@@ -540,7 +573,7 @@ function Library:CreateWindow(name, size, position)
                         BackgroundTransparency = 1,
                         Position = UDim2.new(1, -110, 0.5, -8),
                         Size = UDim2.new(0, 100, 0, 16),
-                        ZIndex = 2,
+                        ZIndex = 3,
                         Image = "rbxassetid://5028857472",
                         ImageColor3 = Library.Theme.PrimaryColor,
                         ScaleType = Enum.ScaleType.Slice,
@@ -552,7 +585,7 @@ function Library:CreateWindow(name, size, position)
                             TextTruncate = Enum.TextTruncate.AtEnd,
                             Position = UDim2.new(0, 5, 0, 0),
                             Size = UDim2.new(1, -10, 1, 0),
-                            ZIndex = 3,
+                            ZIndex = 4,
                             Font = Library.Theme.BoldFont,
                             Text = default or "",
                             TextColor3 = Library.Theme.TextColor,
@@ -598,7 +631,8 @@ function Library:CreateWindow(name, size, position)
                     Parent = Section.ScrollingFrame,
                     BackgroundTransparency = 1,
                     Size = UDim2.new(1, 0, 0, 35),
-                    ClipsDescendants = true
+                    ClipsDescendants = true,
+                    ZIndex = 3
                 }, {
                     utility:Create("UIListLayout", {
                         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -609,7 +643,7 @@ function Library:CreateWindow(name, size, position)
                         BackgroundTransparency = 1,
                         BorderSizePixel = 0,
                         Size = UDim2.new(1, 0, 0, 35),
-                        ZIndex = 2,
+                        ZIndex = 4,
                         Image = "rbxassetid://5028857472",
                         ImageColor3 = Library.Theme.SecondaryColor,
                         ScaleType = Enum.ScaleType.Slice,
@@ -622,12 +656,14 @@ function Library:CreateWindow(name, size, position)
                             TextTruncate = Enum.TextTruncate.AtEnd,
                             Position = UDim2.new(0, 10, 0.5, 0),
                             Size = UDim2.new(1, -42, 1, 0),
-                            ZIndex = 3,
+                            ZIndex = 5,
                             Font = Library.Theme.Font,
                             Text = default or text,
                             TextColor3 = Library.Theme.TextColor,
                             TextSize = Library.Theme.TextSize,
-                            TextXAlignment = Enum.TextXAlignment.Left
+                            TextXAlignment = Enum.TextXAlignment.Left,
+                            PlaceholderText = text,
+                            PlaceholderColor3 = Library.Theme.TextColor
                         }),
                         utility:Create("ImageButton", {
                             Name = "Button",
@@ -635,7 +671,7 @@ function Library:CreateWindow(name, size, position)
                             BorderSizePixel = 0,
                             Position = UDim2.new(1, -28, 0.5, -9),
                             Size = UDim2.new(0, 18, 0, 18),
-                            ZIndex = 3,
+                            ZIndex = 5,
                             Image = "rbxassetid://5012539403",
                             ImageColor3 = Library.Theme.TextColor,
                             SliceCenter = Rect.new(2, 2, 298, 298)
@@ -646,7 +682,7 @@ function Library:CreateWindow(name, size, position)
                         BackgroundTransparency = 1,
                         BorderSizePixel = 0,
                         Size = UDim2.new(1, 0, 1, -39),
-                        ZIndex = 2,
+                        ZIndex = 4,
                         Image = "rbxassetid://5028857472",
                         ImageColor3 = Library.Theme.PrimaryColor,
                         ScaleType = Enum.ScaleType.Slice,
@@ -661,7 +697,7 @@ function Library:CreateWindow(name, size, position)
                             Size = UDim2.new(1, -8, 1, -8),
                             CanvasPosition = Vector2.new(0, 0),
                             CanvasSize = UDim2.new(0, 0, 0, 0),
-                            ZIndex = 2,
+                            ZIndex = 5,
                             ScrollBarThickness = 3,
                             ScrollBarImageColor3 = Library.Theme.SecondaryColor
                         }, {
@@ -680,6 +716,7 @@ function Library:CreateWindow(name, size, position)
                 local list = options or {}
 
                 search.Button.MouseButton1Click:Connect(function()
+                    utility:Pop(search, 10)
                     if search.Button.Rotation == 0 then
                         local currentList = utility:Sort(search.TextBox.Text, list)
                         currentList = #currentList ~= 0 and currentList or nil
@@ -699,7 +736,7 @@ function Library:CreateWindow(name, size, position)
                                 BackgroundTransparency = 1,
                                 BorderSizePixel = 0,
                                 Size = UDim2.new(1, 0, 0, 35),
-                                ZIndex = 2,
+                                ZIndex = 6,
                                 Image = "rbxassetid://5028857472",
                                 ImageColor3 = Library.Theme.SecondaryColor,
                                 ScaleType = Enum.ScaleType.Slice,
@@ -709,7 +746,7 @@ function Library:CreateWindow(name, size, position)
                                     BackgroundTransparency = 1,
                                     Position = UDim2.new(0, 10, 0, 0),
                                     Size = UDim2.new(1, -10, 1, 0),
-                                    ZIndex = 3,
+                                    ZIndex = 7,
                                     Font = Library.Theme.Font,
                                     Text = tostring(value),
                                     TextColor3 = Library.Theme.TextColor,
@@ -720,6 +757,7 @@ function Library:CreateWindow(name, size, position)
                             })
 
                             button.MouseButton1Click:Connect(function()
+                                utility:Pop(button, 10)
                                 search.TextBox.Text = tostring(value)
                                 callback(value)
                                 utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, 35)}, 0.3)
@@ -756,7 +794,7 @@ function Library:CreateWindow(name, size, position)
                                 BackgroundTransparency = 1,
                                 BorderSizePixel = 0,
                                 Size = UDim2.new(1, 0, 0, 35),
-                                ZIndex = 2,
+                                ZIndex = 6,
                                 Image = "rbxassetid://5028857472",
                                 ImageColor3 = Library.Theme.SecondaryColor,
                                 ScaleType = Enum.ScaleType.Slice,
@@ -766,7 +804,7 @@ function Library:CreateWindow(name, size, position)
                                     BackgroundTransparency = 1,
                                     Position = UDim2.new(0, 10, 0, 0),
                                     Size = UDim2.new(1, -10, 1, 0),
-                                    ZIndex = 3,
+                                    ZIndex = 7,
                                     Font = Library.Theme.Font,
                                     Text = tostring(value),
                                     TextColor3 = Library.Theme.TextColor,
@@ -777,6 +815,7 @@ function Library:CreateWindow(name, size, position)
                             })
 
                             button.MouseButton1Click:Connect(function()
+                                utility:Pop(button, 10)
                                 search.TextBox.Text = tostring(value)
                                 callback(value)
                                 utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, 35)}, 0.3)
@@ -812,7 +851,7 @@ function Library:CreateWindow(name, size, position)
                                 BackgroundTransparency = 1,
                                 BorderSizePixel = 0,
                                 Size = UDim2.new(1, 0, 0, 35),
-                                ZIndex = 2,
+                                ZIndex = 6,
                                 Image = "rbxassetid://5028857472",
                                 ImageColor3 = Library.Theme.SecondaryColor,
                                 ScaleType = Enum.ScaleType.Slice,
@@ -822,7 +861,7 @@ function Library:CreateWindow(name, size, position)
                                     BackgroundTransparency = 1,
                                     Position = UDim2.new(0, 10, 0, 0),
                                     Size = UDim2.new(1, -10, 1, 0),
-                                    ZIndex = 3,
+                                    ZIndex = 7,
                                     Font = Library.Theme.Font,
                                     Text = tostring(value),
                                     TextColor3 = Library.Theme.TextColor,
@@ -833,6 +872,7 @@ function Library:CreateWindow(name, size, position)
                             })
 
                             button.MouseButton1Click:Connect(function()
+                                utility:Pop(button, 10)
                                 search.TextBox.Text = tostring(value)
                                 callback(value)
                                 utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, 35)}, 0.3)
@@ -848,6 +888,7 @@ function Library:CreateWindow(name, size, position)
                 return Dropdown
             end
 
+            table.insert(Tab.Sections, Section)
             return Section
         end
 
