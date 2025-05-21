@@ -1,4 +1,4 @@
--- Toaster Hub Library (Fixed Glow Issue, Enhanced Dropdowns and GUI Layout)
+-- Toaster Hub Library (Fixed Glow Assignment Issue, Enhanced Dropdowns and GUI Layout)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.9"
+    Version = "2.10"
 }
 
 -- Debug print to confirm library version
@@ -118,7 +118,7 @@ function Library:CreateWindow(name, size, position)
     })
 
     -- Glow
-    local glow = utility:Create("ImageLabel", {
+    utility:Create("ImageLabel", {
         Name = "Glow",
         BackgroundTransparency = 1,
         Position = UDim2.new(0, -15, 0, -15),
@@ -130,10 +130,9 @@ function Library:CreateWindow(name, size, position)
         SliceCenter = Rect.new(24, 24, 276, 276),
         Parent = Window.Main
     })
-    Window.Main.Glow = glow
 
     -- Pages Sidebar
-    local pages = utility:Create("ImageLabel", {
+    utility:Create("ImageLabel", {
         Name = "Pages",
         BackgroundTransparency = 1,
         ClipsDescendants = true,
@@ -145,29 +144,26 @@ function Library:CreateWindow(name, size, position)
         ScaleType = Enum.ScaleType.Slice,
         SliceCenter = Rect.new(4, 4, 296, 296),
         Parent = Window.Main
-    })
-    Window.Main.Pages = pages
-
-    local pagesContainer = utility:Create("ScrollingFrame", {
-        Name = "Pages_Container",
-        Active = true,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 10),
-        Size = UDim2.new(1, 0, 1, -20),
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = Library.Theme.SecondaryColor,
-        Parent = Window.Main.Pages
     }, {
-        utility:Create("UIListLayout", {
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 10)
+        utility:Create("ScrollingFrame", {
+            Name = "Pages_Container",
+            Active = true,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 0, 0, 10),
+            Size = UDim2.new(1, 0, 1, -20),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarThickness = 3,
+            ScrollBarImageColor3 = Library.Theme.SecondaryColor
+        }, {
+            utility:Create("UIListLayout", {
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 10)
+            })
         })
     })
-    Window.Main.Pages.Pages_Container = pagesContainer
 
     -- TopBar
-    local topBar = utility:Create("ImageLabel", {
+    utility:Create("ImageLabel", {
         Name = "TopBar",
         BackgroundTransparency = 1,
         ClipsDescendants = true,
@@ -191,40 +187,30 @@ function Library:CreateWindow(name, size, position)
             TextColor3 = Library.Theme.TextColor,
             TextSize = Library.Theme.BoldTextSize,
             TextXAlignment = Enum.TextXAlignment.Left
+        }),
+        utility:Create("TextButton", {
+            Name = "MinimizeButton",
+            Size = UDim2.new(0, 30, 0, 30),
+            Position = UDim2.new(1, -60, 0, 0),
+            BackgroundColor3 = Library.Theme.ButtonColor,
+            Text = "-",
+            TextColor3 = Library.Theme.TextColor,
+            Font = Library.Theme.BoldFont,
+            TextSize = Library.Theme.BoldTextSize,
+            ZIndex = 6
+        }),
+        utility:Create("TextButton", {
+            Name = "CloseButton",
+            Size = UDim2.new(0, 30, 0, 30),
+            Position = UDim2.new(1, -30, 0, 0),
+            BackgroundColor3 = Library.Theme.ButtonColor,
+            Text = "X",
+            TextColor3 = Library.Theme.TextColor,
+            Font = Library.Theme.BoldFont,
+            TextSize = Library.Theme.BoldTextSize,
+            ZIndex = 6
         })
     })
-    Window.Main.TopBar = topBar
-
-    -- Create Minimize and Close Buttons
-    if not Window.Main.TopBar then
-        error("Failed to create TopBar in Window.Main")
-    end
-
-    local minimizeButton = utility:Create("TextButton", {
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -60, 0, 0),
-        BackgroundColor3 = Library.Theme.ButtonColor,
-        Text = "-",
-        TextColor3 = Library.Theme.TextColor,
-        Font = Library.Theme.BoldFont,
-        TextSize = Library.Theme.BoldTextSize,
-        ZIndex = 6,
-        Parent = Window.Main.TopBar
-    })
-    Window.Main.TopBar.MinimizeButton = minimizeButton
-
-    local closeButton = utility:Create("TextButton", {
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -30, 0, 0),
-        BackgroundColor3 = Library.Theme.ButtonColor,
-        Text = "X",
-        TextColor3 = Library.Theme.TextColor,
-        Font = Library.Theme.BoldFont,
-        TextSize = Library.Theme.BoldTextSize,
-        ZIndex = 6,
-        Parent = Window.Main.TopBar
-    })
-    Window.Main.TopBar.CloseButton = closeButton
 
     -- Dragging Logic
     local dragging, dragStart, startPos
