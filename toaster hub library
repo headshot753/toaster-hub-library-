@@ -1,4 +1,4 @@
--- Toaster Hub Library (Updated to Fix Disappearing Textboxes with Debug)
+-- Toaster Hub Library (Updated with Positioning and ZIndex Fixes)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.0" -- Added version identifier
+    Version = "2.1"
 }
 
 -- Debug print to confirm library version
@@ -252,19 +252,21 @@ function Library:CreateWindow(name, size, position)
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
             Label.ClipsDescendants = true
-            Label.Visible = true -- Ensure the label remains visible
+            Label.Visible = true
+            Label.ZIndex = 5 -- Increase ZIndex to ensure visibility
             Label.Parent = Tab.ScrollingFrame
 
             local Textbox = Instance.new("TextBox")
             Textbox.Size = UDim2.new(0, 150, 0, 30)
-            Textbox.Position = UDim2.new(0, 110, 0, 0)
+            Textbox.Position = UDim2.new(0, 90, 0, 0) -- Adjusted position to ensure visibility
             Textbox.BackgroundColor3 = Library.Theme.SecondaryColor
             Textbox.Text = default or ""
             Textbox.TextColor3 = Library.Theme.TextColor
             Textbox.Font = Library.Theme.Font
             Textbox.TextSize = Library.Theme.TextSize
             Textbox.TextWrapped = true
-            Textbox.Visible = true -- Ensure the textbox remains visible
+            Textbox.Visible = true
+            Textbox.ZIndex = 5 -- Increase ZIndex to ensure visibility
             Textbox.Parent = Label
 
             -- Safety check to prevent disappearing
@@ -294,21 +296,23 @@ function Library:CreateWindow(name, size, position)
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
+            Label.ZIndex = 5 -- Increase ZIndex to ensure visibility
             Label.Parent = Tab.ScrollingFrame
 
             local Dropdown = Instance.new("TextButton")
             Dropdown.Size = UDim2.new(0, 100, 0, 30)
-            Dropdown.Position = UDim2.new(0, 110, 0, 0)
+            Dropdown.Position = UDim2.new(0, 90, 0, 0) -- Adjusted position to ensure visibility
             Dropdown.BackgroundColor3 = Library.Theme.SecondaryColor
             Dropdown.Text = default
             Dropdown.TextColor3 = Library.Theme.TextColor
             Dropdown.Font = Library.Theme.Font
             Dropdown.TextSize = Library.Theme.TextSize
+            Dropdown.ZIndex = 5 -- Increase ZIndex to ensure visibility
             Dropdown.Parent = Label
 
             local DropdownFrame = Instance.new("ScrollingFrame")
             DropdownFrame.Size = UDim2.new(0, 100, 0, 120)
-            DropdownFrame.Position = UDim2.new(0, 110, 0, 30)
+            DropdownFrame.Position = UDim2.new(0, 90, 0, 30)
             DropdownFrame.BackgroundColor3 = Library.Theme.SecondaryColor
             DropdownFrame.Visible = false
             DropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
