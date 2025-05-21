@@ -1,4 +1,4 @@
--- Toaster Hub Library (Added Debug and Error Handling, Dynamic Section Creation)
+-- Toaster Hub Library (Enhanced Error Handling and Debugging)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.13"
+    Version = "2.14"
 }
 
 -- Debug print to confirm library version
@@ -35,12 +35,22 @@ function utility:Create(instance, properties, children)
     for i, v in pairs(properties or {}) do
         local setSuccess, setError = pcall(function() object[i] = v end)
         if not setSuccess then
-            warn("Failed to set property " .. i .. " on " .. instance .. ": " .. setError)
+            warn("Failed to set property " .. tostring(i) .. " on " .. instance .. ": " .. setError)
+            return nil -- Fail early if a property cannot be set
         end
     end
     
     for i, module in pairs(children or {}) do
-        module.Parent = object
+        if module then
+            local setParentSuccess, setParentError = pcall(function() module.Parent = object end)
+            if not setParentSuccess then
+                warn("Failed to set parent for child " .. tostring(i) .. " of " .. instance .. ": " .. setParentError)
+                return nil
+            end
+        else
+            warn("Child " .. tostring(i) .. " of " .. instance .. " is nil")
+            return nil
+        end
     end
     
     return object
@@ -49,7 +59,12 @@ end
 function utility:Tween(instance, properties, duration)
     local TweenService = game:GetService("TweenService")
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    TweenService:Create(instance, tweenInfo, properties):Play()
+    local success, err = pcall(function()
+        TweenService:Create(instance, tweenInfo, properties):Play()
+    end)
+    if not success then
+        warn("Failed to tween instance: " .. err)
+    end
 end
 
 function utility:Wait()
@@ -59,6 +74,10 @@ end
 
 function utility:Pop(object, shrink)
     local clone = object:Clone()
+    if not clone then
+        warn("Failed to clone object for pop animation")
+        return
+    end
     
     clone.AnchorPoint = Vector2.new(0.5, 0.5)
     clone.Size = clone.Size - UDim2.new(0, shrink, 0, shrink)
@@ -133,7 +152,7 @@ function Library:CreateWindow(name, size, position)
     end
 
     -- Glow
-    utility:Create("ImageLabel", {
+    local glow = utility:Create("ImageLabel", {
         Name = "Glow",
         BackgroundTransparency = 1,
         Position = UDim2.new(0, -15, 0, -15),
@@ -145,9 +164,12 @@ function Library:CreateWindow(name, size, position)
         SliceCenter = Rect.new(24, 24, 276, 276),
         Parent = Window.Main
     })
+    if not glow then
+        warn("Failed to create Glow for Main Frame")
+    end
 
     -- Pages Sidebar
-    utility:Create("ImageLabel", {
+    local pages = utility:Create("ImageLabel", {
         Name = "Pages",
         BackgroundTransparency = 1,
         ClipsDescendants = true,
@@ -176,9 +198,12 @@ function Library:CreateWindow(name, size, position)
             })
         })
     })
+    if not pages then
+        warn("Failed to create Pages Sidebar")
+    end
 
     -- TopBar
-    utility:Create("ImageLabel", {
+    local topBar = utility:Create("ImageLabel", {
         Name = "TopBar",
         BackgroundTransparency = 1,
         ClipsDescendants = true,
@@ -226,6 +251,9 @@ function Library:CreateWindow(name, size, position)
             ZIndex = 6
         })
     })
+    if not topBar then
+        warn("Failed to create TopBar")
+    end
 
     -- Dragging Logic
     local dragging, dragStart, startPos
@@ -264,10 +292,14 @@ function Library:CreateWindow(name, size, position)
             Parent = Window.ScreenGui
         })
 
-        restoreButton.MouseButton1Click:Connect(function()
-            Window.Main.Visible = true
-            restoreButton:Destroy()
-        end)
+        if restoreButton then
+            restoreButton.MouseButton1Click:Connect(function()
+                Window.Main.Visible = true
+                restoreButton:Destroy()
+            end)
+        else
+            warn("Failed to create Restore Button")
+        end
     end)
 
     -- Close Logic
@@ -280,8 +312,8 @@ function Library:CreateWindow(name, size, position)
         Tab.Name = name
         Tab.Elements = {}
         Tab.Sections = {}
-        Tab.IsInitialized = false -- Track if sections have been initialized
-        Tab.InitializeSections = nil -- Function to initialize sections
+        Tab.IsInitialized = false
+        Tab.InitializeSections = nil
 
         -- Tab Button
         Tab.Button = utility:Create("TextButton", {
@@ -333,6 +365,10 @@ function Library:CreateWindow(name, size, position)
                 ImageTransparency = 0.64
             })
         })
+        if not Tab.Button then
+            warn("Failed to create Tab.Button for tab: " .. name)
+            return Tab
+        end
 
         -- Tab Frame
         Tab.Frame = utility:Create("ScrollingFrame", {
@@ -355,7 +391,7 @@ function Library:CreateWindow(name, size, position)
         })
         if not Tab.Frame then
             warn("Failed to create Tab.Frame for tab: " .. name)
-            return Tab -- Return Tab without sections
+            return Tab
         end
 
         -- Update CanvasSize when elements are added
@@ -368,6 +404,10 @@ function Library:CreateWindow(name, size, position)
                 warn("Cannot create section '" .. title .. "' in tab '" .. Tab.Name .. "': Tab.Frame or its parent is nil")
                 return nil
             end
+
+            print("Creating section '" .. title .. "' in tab '" .. Tab.Name .. "'")
+            print("Tab.Frame.Parent:", Tab.Frame.Parent)
+            print("Tab.Frame.Parent.Parent:", Tab.Frame.Parent and Tab.Frame.Parent.Parent)
 
             local Section = {}
             Section.Elements = {}
@@ -401,7 +441,7 @@ function Library:CreateWindow(name, size, position)
                         Text = title,
                         TextColor3 = Library.Theme.TextColor,
                         TextSize = 14,
-                        TextTransparency = 1, -- Initially transparent
+                        TextTransparency = 1,
                         TextXAlignment = Enum.TextXAlignment.Left
                     }),
                     utility:Create("UIListLayout", {
