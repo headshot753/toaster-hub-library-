@@ -1,4 +1,4 @@
---// Toaster Hub Library – Side Tabs & Mobile Responsive (Part 1/2)
+--// Toaster Hub Library – Side Tabs, Scrollable Dropdowns, Mobile Ready (Part 1/2)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.6"
+    Version = "2.7"
 }
 
 print("Toaster Hub Library v" .. Library.Version .. " loaded")
@@ -304,18 +304,18 @@ function Library:CreateWindow(name)
             Dropdown.ZIndex = 2
             Dropdown.Parent = Holder
 
-            local Scroll = Instance.new("ScrollingFrame")
-            Scroll.Size = UDim2.new(0.6, 0, 0, 120)
-            Scroll.Position = UDim2.new(0.4, 0, 1, 0)
-            Scroll.BackgroundColor3 = Library.Theme.SecondaryColor
-            Scroll.Visible = false
-            Scroll.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
-            Scroll.ScrollBarThickness = 5
-            Scroll.ClipsDescendants = true
-            Scroll.ZIndex = 3
-            Scroll.Parent = Holder
+            local DropdownList = Instance.new("ScrollingFrame")
+            DropdownList.Size = UDim2.new(0, Dropdown.AbsoluteSize.X, 0, 120)
+            DropdownList.Position = UDim2.new(0, Dropdown.AbsolutePosition.X, 0, Dropdown.AbsolutePosition.Y + Dropdown.AbsoluteSize.Y)
+            DropdownList.BackgroundColor3 = Library.Theme.SecondaryColor
+            DropdownList.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+            DropdownList.ScrollBarThickness = 5
+            DropdownList.ZIndex = 99
+            DropdownList.Visible = false
+            DropdownList.ClipsDescendants = true
+            DropdownList.Parent = Holder:FindFirstAncestorOfClass("ScreenGui")
 
-            local layout = Instance.new("UIListLayout", Scroll)
+            local layout = Instance.new("UIListLayout", DropdownList)
             layout.SortOrder = Enum.SortOrder.LayoutOrder
 
             for _, opt in ipairs(options) do
@@ -326,17 +326,22 @@ function Library:CreateWindow(name)
                 B.TextColor3 = Library.Theme.TextColor
                 B.Font = Library.Theme.Font
                 B.TextSize = Library.Theme.TextSize
-                B.ZIndex = 4
-                B.Parent = Scroll
+                B.ZIndex = 100
+                B.Parent = DropdownList
                 B.MouseButton1Click:Connect(function()
                     Dropdown.Text = opt
-                    Scroll.Visible = false
+                    DropdownList.Visible = false
                     callback(opt)
                 end)
             end
 
+            Dropdown:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+                DropdownList.Position = UDim2.new(0, Dropdown.AbsolutePosition.X, 0, Dropdown.AbsolutePosition.Y + Dropdown.AbsoluteSize.Y)
+            end)
+
             Dropdown.MouseButton1Click:Connect(function()
-                Scroll.Visible = not Scroll.Visible
+                DropdownList.Visible = not DropdownList.Visible
+                DropdownList.Position = UDim2.new(0, Dropdown.AbsolutePosition.X, 0, Dropdown.AbsolutePosition.Y + Dropdown.AbsoluteSize.Y)
             end)
 
             table.insert(Tab.Elements, Holder)
