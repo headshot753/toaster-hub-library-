@@ -1,4 +1,4 @@
--- Toaster Hub Library (Fixed AddToggle Title Reference, Enhanced Dropdowns and GUI Layout)
+-- Toaster Hub Library (Added Debug and Error Handling, Dynamic Section Creation)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.12"
+    Version = "2.13"
 }
 
 -- Debug print to confirm library version
@@ -26,10 +26,17 @@ local UserInputService = game:GetService("UserInputService")
 local utility = {}
 
 function utility:Create(instance, properties, children)
-    local object = Instance.new(instance)
+    local success, object = pcall(Instance.new, instance)
+    if not success then
+        warn("Failed to create instance of type " .. instance .. ": " .. object)
+        return nil
+    end
     
     for i, v in pairs(properties or {}) do
-        object[i] = v
+        local setSuccess, setError = pcall(function() object[i] = v end)
+        if not setSuccess then
+            warn("Failed to set property " .. i .. " on " .. instance .. ": " .. setError)
+        end
     end
     
     for i, module in pairs(children or {}) do
@@ -103,6 +110,10 @@ function Library:CreateWindow(name, size, position)
         ResetOnSpawn = false,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     })
+    if not Window.ScreenGui then
+        warn("Failed to create ScreenGui")
+        return nil
+    end
 
     -- Main Frame
     Window.Main = utility:Create("ImageLabel", {
@@ -116,6 +127,10 @@ function Library:CreateWindow(name, size, position)
         SliceCenter = Rect.new(4, 4, 296, 296),
         Parent = Window.ScreenGui
     })
+    if not Window.Main then
+        warn("Failed to create Main Frame")
+        return nil
+    end
 
     -- Glow
     utility:Create("ImageLabel", {
@@ -264,6 +279,9 @@ function Library:CreateWindow(name, size, position)
         local Tab = {}
         Tab.Name = name
         Tab.Elements = {}
+        Tab.Sections = {}
+        Tab.IsInitialized = false -- Track if sections have been initialized
+        Tab.InitializeSections = nil -- Function to initialize sections
 
         -- Tab Button
         Tab.Button = utility:Create("TextButton", {
@@ -335,49 +353,22 @@ function Library:CreateWindow(name, size, position)
                 Padding = UDim.new(0, 10)
             })
         })
+        if not Tab.Frame then
+            warn("Failed to create Tab.Frame for tab: " .. name)
+            return Tab -- Return Tab without sections
+        end
 
         -- Update CanvasSize when elements are added
         Tab.Frame.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             Tab.Frame.CanvasSize = UDim2.new(0, 0, 0, Tab.Frame.UIListLayout.AbsoluteContentSize.Y)
         end)
 
-        -- Tab Switching
-        Tab.Button.MouseButton1Click:Connect(function()
-            for _, tab in pairs(Window.Tabs) do
-                tab.Frame.Visible = false
-                tab.Button.Title.TextTransparency = 0.65
-                tab.Button.Title.Font = Library.Theme.Font
-                if tab.Button:FindFirstChild("Icon") then
-                    tab.Button.Icon.ImageTransparency = 0.65
-                end
-                if tab.Button:FindFirstChild("Background") then
-                    utility:Tween(tab.Button.Background, {ImageTransparency = 1}, 0.2)
-                end
-                -- Hide sections with animation
-                for _, section in pairs(tab.Sections or {}) do
-                    utility:Tween(section.Frame, {ImageTransparency = 1}, 0.1)
-                    utility:Tween(section.ScrollingFrame.Title, {TextTransparency = 1}, 0.1)
-                end
-            end
-            Tab.Frame.Visible = true
-            Tab.Button.Title.TextTransparency = 0
-            Tab.Button.Title.Font = Library.Theme.BoldFont
-            if Tab.Button:FindFirstChild("Icon") then
-                Tab.Button.Icon.ImageTransparency = 0
-            end
-            if Tab.Button:FindFirstChild("Background") then
-                utility:Tween(Tab.Button.Background, {ImageTransparency = 0.7}, 0.2)
-            end
-            -- Show sections with animation
-            for _, section in pairs(Tab.Sections or {}) do
-                utility:Tween(section.Frame, {ImageTransparency = 0}, 0.1)
-                utility:Tween(section.ScrollingFrame.Title, {TextTransparency = 0}, 0.1)
-            end
-        end)
-
-        Tab.Sections = {}
-
         function Tab:AddSection(title)
+            if not Tab.Frame or not Tab.Frame.Parent then
+                warn("Cannot create section '" .. title .. "' in tab '" .. Tab.Name .. "': Tab.Frame or its parent is nil")
+                return nil
+            end
+
             local Section = {}
             Section.Elements = {}
 
@@ -420,7 +411,16 @@ function Library:CreateWindow(name, size, position)
                 })
             })
 
+            if not Section.Frame then
+                warn("Failed to create Section.Frame for section '" .. title .. "' in tab '" .. Tab.Name .. "'")
+                return nil
+            end
+
             Section.ScrollingFrame = Section.Frame.Container
+            if not Section.ScrollingFrame then
+                warn("Section.ScrollingFrame is nil for section '" .. title .. "' in tab '" .. Tab.Name .. "'")
+                return nil
+            end
 
             function Section:AddLabel(text)
                 local Label = utility:Create("TextLabel", {
@@ -435,6 +435,10 @@ function Library:CreateWindow(name, size, position)
                     TextSize = Library.Theme.TextSize,
                     TextXAlignment = Enum.TextXAlignment.Left
                 })
+                if not Label then
+                    warn("Failed to create Label in section '" .. title .. "'")
+                    return nil
+                end
                 table.insert(Section.Elements, Label)
                 return Label
             end
@@ -463,6 +467,10 @@ function Library:CreateWindow(name, size, position)
                         TextSize = Library.Theme.TextSize
                     })
                 })
+                if not Button then
+                    warn("Failed to create Button in section '" .. title .. "'")
+                    return nil
+                end
 
                 table.insert(Section.Elements, Button)
 
@@ -525,6 +533,10 @@ function Library:CreateWindow(name, size, position)
                         })
                     })
                 })
+                if not Toggle then
+                    warn("Failed to create Toggle in section '" .. title .. "'")
+                    return nil
+                end
 
                 table.insert(Section.Elements, Toggle)
 
@@ -599,6 +611,10 @@ function Library:CreateWindow(name, size, position)
                         })
                     })
                 })
+                if not Textbox then
+                    warn("Failed to create Textbox in section '" .. title .. "'")
+                    return nil
+                end
 
                 table.insert(Section.Elements, Textbox)
 
@@ -713,6 +729,10 @@ function Library:CreateWindow(name, size, position)
                         })
                     })
                 })
+                if not Dropdown then
+                    warn("Failed to create Dropdown in section '" .. title .. "'")
+                    return nil
+                end
 
                 table.insert(Section.Elements, Dropdown)
 
@@ -760,6 +780,10 @@ function Library:CreateWindow(name, size, position)
                                     TextTransparency = 0.1
                                 })
                             })
+                            if not button then
+                                warn("Failed to create dropdown option button for value: " .. tostring(value))
+                                continue
+                            end
 
                             button.MouseButton1Click:Connect(function()
                                 utility:Pop(button, 10)
@@ -818,6 +842,10 @@ function Library:CreateWindow(name, size, position)
                                     TextTransparency = 0.1
                                 })
                             })
+                            if not button then
+                                warn("Failed to create dropdown option button for value: " .. tostring(value))
+                                continue
+                            end
 
                             button.MouseButton1Click:Connect(function()
                                 utility:Pop(button, 10)
@@ -875,6 +903,10 @@ function Library:CreateWindow(name, size, position)
                                     TextTransparency = 0.1
                                 })
                             })
+                            if not button then
+                                warn("Failed to create dropdown option button for value: " .. tostring(value))
+                                continue
+                            end
 
                             button.MouseButton1Click:Connect(function()
                                 utility:Pop(button, 10)
@@ -896,6 +928,47 @@ function Library:CreateWindow(name, size, position)
             table.insert(Tab.Sections, Section)
             return Section
         end
+
+        -- Tab Switching with Dynamic Initialization
+        Tab.Button.MouseButton1Click:Connect(function()
+            for _, tab in pairs(Window.Tabs) do
+                tab.Frame.Visible = false
+                tab.Button.Title.TextTransparency = 0.65
+                tab.Button.Title.Font = Library.Theme.Font
+                if tab.Button:FindFirstChild("Icon") then
+                    tab.Button.Icon.ImageTransparency = 0.65
+                end
+                if tab.Button:FindFirstChild("Background") then
+                    utility:Tween(tab.Button.Background, {ImageTransparency = 1}, 0.2)
+                end
+                -- Hide sections with animation
+                for _, section in pairs(tab.Sections) do
+                    utility:Tween(section.Frame, {ImageTransparency = 1}, 0.1)
+                    utility:Tween(section.ScrollingFrame.Title, {TextTransparency = 1}, 0.1)
+                end
+            end
+
+            -- Initialize sections if not already done
+            if not Tab.IsInitialized and Tab.InitializeSections then
+                Tab.InitializeSections()
+                Tab.IsInitialized = true
+            end
+
+            Tab.Frame.Visible = true
+            Tab.Button.Title.TextTransparency = 0
+            Tab.Button.Title.Font = Library.Theme.BoldFont
+            if Tab.Button:FindFirstChild("Icon") then
+                Tab.Button.Icon.ImageTransparency = 0
+            end
+            if Tab.Button:FindFirstChild("Background") then
+                utility:Tween(Tab.Button.Background, {ImageTransparency = 0.7}, 0.2)
+            end
+            -- Show sections with animation
+            for _, section in pairs(Tab.Sections) do
+                utility:Tween(section.Frame, {ImageTransparency = 0}, 0.1)
+                utility:Tween(section.ScrollingFrame.Title, {TextTransparency = 0}, 0.1)
+            end
+        end)
 
         table.insert(Window.Tabs, Tab)
         return Tab
