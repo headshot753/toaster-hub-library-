@@ -1,4 +1,4 @@
--- Toaster Hub Library (Updated with Positioning and ZIndex Fixes)
+-- Toaster Hub Library (Updated with Larger Textboxes)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.1"
+    Version = "2.2"
 }
 
 -- Debug print to confirm library version
@@ -245,7 +245,7 @@ function Library:CreateWindow(name, size, position)
 
         function Tab:AddTextbox(text, default, callback)
             local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 100, 0, 30)
+            Label.Size = UDim2.new(0, 300, 0, 40) -- Increased width to accommodate larger textbox
             Label.BackgroundTransparency = 1
             Label.Text = text
             Label.TextColor3 = Library.Theme.TextColor
@@ -253,20 +253,20 @@ function Library:CreateWindow(name, size, position)
             Label.TextSize = Library.Theme.TextSize
             Label.ClipsDescendants = true
             Label.Visible = true
-            Label.ZIndex = 5 -- Increase ZIndex to ensure visibility
+            Label.ZIndex = 5
             Label.Parent = Tab.ScrollingFrame
 
             local Textbox = Instance.new("TextBox")
-            Textbox.Size = UDim2.new(0, 150, 0, 30)
-            Textbox.Position = UDim2.new(0, 90, 0, 0) -- Adjusted position to ensure visibility
+            Textbox.Size = UDim2.new(0, 200, 0, 40) -- Increased size for better usability
+            Textbox.Position = UDim2.new(0, 90, 0, 0)
             Textbox.BackgroundColor3 = Library.Theme.SecondaryColor
             Textbox.Text = default or ""
             Textbox.TextColor3 = Library.Theme.TextColor
             Textbox.Font = Library.Theme.Font
-            Textbox.TextSize = Library.Theme.TextSize
+            Textbox.TextSize = 18 -- Increased text size for readability
             Textbox.TextWrapped = true
             Textbox.Visible = true
-            Textbox.ZIndex = 5 -- Increase ZIndex to ensure visibility
+            Textbox.ZIndex = 5
             Textbox.Parent = Label
 
             -- Safety check to prevent disappearing
@@ -290,24 +290,24 @@ function Library:CreateWindow(name, size, position)
 
         function Tab:AddDropdown(text, options, default, callback)
             local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 100, 0, 30)
+            Label.Size = UDim2.new(0, 300, 0, 40) -- Adjusted to match textbox container size
             Label.BackgroundTransparency = 1
             Label.Text = text
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.ZIndex = 5 -- Increase ZIndex to ensure visibility
+            Label.ZIndex = 5
             Label.Parent = Tab.ScrollingFrame
 
             local Dropdown = Instance.new("TextButton")
             Dropdown.Size = UDim2.new(0, 100, 0, 30)
-            Dropdown.Position = UDim2.new(0, 90, 0, 0) -- Adjusted position to ensure visibility
+            Dropdown.Position = UDim2.new(0, 90, 0, 0)
             Dropdown.BackgroundColor3 = Library.Theme.SecondaryColor
             Dropdown.Text = default
             Dropdown.TextColor3 = Library.Theme.TextColor
             Dropdown.Font = Library.Theme.Font
             Dropdown.TextSize = Library.Theme.TextSize
-            Dropdown.ZIndex = 5 -- Increase ZIndex to ensure visibility
+            Dropdown.ZIndex = 5
             Dropdown.Parent = Label
 
             local DropdownFrame = Instance.new("ScrollingFrame")
