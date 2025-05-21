@@ -1,4 +1,4 @@
--- Toaster Hub Library (Adjusted Textbox Size and Window Size)
+-- Toaster Hub Library (Updated with Improved Dropdowns and Cleaner Layout)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.3"
+    Version = "2.4"
 }
 
 -- Debug print to confirm library version
@@ -22,93 +22,177 @@ print("Toaster Hub Library Version " .. Library.Version .. " loaded")
 -- Services
 local UserInputService = game:GetService("UserInputService")
 
+-- Utility Functions
+local utility = {}
+
+function utility:Create(instance, properties, children)
+    local object = Instance.new(instance)
+    
+    for i, v in pairs(properties or {}) do
+        object[i] = v
+    end
+    
+    for i, module in pairs(children or {}) do
+        module.Parent = object
+    end
+    
+    return object
+end
+
+function utility:Tween(instance, properties, duration)
+    local TweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    TweenService:Create(instance, tweenInfo, properties):Play()
+end
+
+function utility:Wait()
+    game:GetService("RunService").RenderStepped:Wait()
+    return true
+end
+
+function utility:Pop(object, shrink)
+    local clone = object:Clone()
+    
+    clone.AnchorPoint = Vector2.new(0.5, 0.5)
+    clone.Size = clone.Size - UDim2.new(0, shrink, 0, shrink)
+    clone.Position = UDim2.new(0.5, 0, 0.5, 0)
+    
+    clone.Parent = object
+    clone:ClearAllChildren()
+    
+    object.ImageTransparency = 1
+    utility:Tween(clone, {Size = object.Size}, 0.2)
+    
+    spawn(function()
+        wait(0.2)
+        object.ImageTransparency = 0
+        clone:Destroy()
+    end)
+    
+    return clone
+end
+
+function utility:Sort(pattern, values)
+    local new = {}
+    pattern = pattern:lower()
+    
+    if pattern == "" then
+        return values
+    end
+    
+    for i, value in pairs(values) do
+        if tostring(value):lower():find(pattern) then
+            table.insert(new, value)
+        end
+    end
+    
+    return new
+end
+
 -- Window Creation
 function Library:CreateWindow(name, size, position)
     local Window = {}
     Window.Tabs = {}
-    Window.Size = size or UDim2.new(0, 500, 0, 350) -- Increased window size for better layout
-    Window.Position = position or UDim2.new(0.5, -250, 0.5, -175) -- Adjusted position to center the larger window
+    Window.Size = size or UDim2.new(0, 500, 0, 350)
+    Window.Position = position or UDim2.new(0.5, -250, 0.5, -175)
 
     -- ScreenGui
-    Window.ScreenGui = Instance.new("ScreenGui")
-    Window.ScreenGui.Name = name .. "Gui"
-    Window.ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
-    Window.ScreenGui.ResetOnSpawn = false
-    Window.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    -- Main Frame
-    Window.MainFrame = Instance.new("Frame")
-    Window.MainFrame.Size = Window.Size
-    Window.MainFrame.Position = Window.Position
-    Window.MainFrame.BackgroundColor3 = Library.Theme.PrimaryColor
-    Window.MainFrame.BorderColor3 = Library.Theme.BorderColor
-    Window.MainFrame.Parent = Window.ScreenGui
-
-    -- Title Bar
-    Window.TitleBar = Instance.new("Frame")
-    Window.TitleBar.Size = UDim2.new(1, 0, 0, 30)
-    Window.TitleBar.BackgroundColor3 = Library.Theme.SecondaryColor
-    Window.TitleBar.BorderSizePixel = 0
-    Window.TitleBar.Parent = Window.MainFrame
-
-    Window.TitleLabel = Instance.new("TextLabel")
-    Window.TitleLabel.Size = UDim2.new(1, -60, 1, 0)
-    Window.TitleLabel.Position = UDim2.new(0, 0, 0, 0)
-    Window.TitleLabel.BackgroundTransparency = 1
-    Window.TitleLabel.Text = name
-    Window.TitleLabel.TextColor3 = Library.Theme.TextColor
-    Window.TitleLabel.Font = Library.Theme.BoldFont
-    Window.TitleLabel.TextSize = Library.Theme.BoldTextSize
-    Window.TitleLabel.Parent = Window.TitleBar
-
-    -- Minimize Button
-    Window.MinimizeButton = Instance.new("TextButton")
-    Window.MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
-    Window.MinimizeButton.Position = UDim2.new(1, -60, 0, 0)
-    Window.MinimizeButton.BackgroundColor3 = Library.Theme.ButtonColor
-    Window.MinimizeButton.Text = "-"
-    Window.MinimizeButton.TextColor3 = Library.Theme.TextColor
-    Window.MinimizeButton.Font = Library.Theme.BoldFont
-    Window.MinimizeButton.TextSize = Library.Theme.BoldTextSize
-    Window.MinimizeButton.Parent = Window.TitleBar
-
-    -- Close Button
-    Window.CloseButton = Instance.new("TextButton")
-    Window.CloseButton.Size = UDim2.new(0, 30, 0, 30)
-    Window.CloseButton.Position = UDim2.new(1, -30, 0, 0)
-    Window.CloseButton.BackgroundColor3 = Library.Theme.ButtonColor
-    Window.CloseButton.Text = "X"
-    Window.CloseButton.TextColor3 = Library.Theme.TextColor
-    Window.CloseButton.Font = Library.Theme.BoldFont
-    Window.CloseButton.TextSize = Library.Theme.BoldTextSize
-    Window.CloseButton.Parent = Window.TitleBar
-
-    -- Tab Bar
-    Window.TabBar = Instance.new("Frame")
-    Window.TabBar.Size = UDim2.new(1, 0, 0, 30)
-    Window.TabBar.Position = UDim2.new(0, 0, 0, 30)
-    Window.TabBar.BackgroundColor3 = Library.Theme.TabColor
-    Window.TabBar.BorderSizePixel = 0
-    Window.TabBar.Parent = Window.MainFrame
-
-    local tabBarLayout = Instance.new("UIListLayout")
-    tabBarLayout.FillDirection = Enum.FillDirection.Horizontal
-    tabBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    tabBarLayout.Parent = Window.TabBar
+    Window.ScreenGui = utility:Create("ScreenGui", {
+        Name = name .. "Gui",
+        Parent = game.Players.LocalPlayer.PlayerGui,
+        ResetOnSpawn = false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    }, {
+        utility:Create("ImageLabel", {
+            Name = "Main",
+            BackgroundTransparency = 1,
+            Position = Window.Position,
+            Size = Window.Size,
+            Image = "rbxassetid://5028857472",
+            ImageColor3 = Library.Theme.PrimaryColor,
+            ScaleType = Enum.ScaleType.Slice,
+            SliceCenter = Rect.new(4, 4, 296, 296)
+        }, {
+            utility:Create("ImageLabel", {
+                Name = "Glow",
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, -15, 0, -15),
+                Size = UDim2.new(1, 30, 1, 30),
+                ZIndex = 0,
+                Image = "rbxassetid://5028857084",
+                ImageColor3 = Library.Theme.BorderColor,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(24, 24, 276, 276)
+            }),
+            utility:Create("ImageLabel", {
+                Name = "Pages",
+                BackgroundTransparency = 1,
+                ClipsDescendants = true,
+                Position = UDim2.new(0, 0, 0, 38),
+                Size = UDim2.new(0, 126, 1, -38),
+                ZIndex = 3,
+                Image = "rbxassetid://5028857472",
+                ImageColor3 = Library.Theme.TabColor,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(4, 4, 296, 296)
+            }, {
+                utility:Create("ScrollingFrame", {
+                    Name = "Pages_Container",
+                    Active = true,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 0, 0, 10),
+                    Size = UDim2.new(1, 0, 1, -20),
+                    CanvasSize = UDim2.new(0, 0, 0, 0),
+                    ScrollBarThickness = 3,
+                    ScrollBarImageColor3 = Library.Theme.SecondaryColor
+                }, {
+                    utility:Create("UIListLayout", {
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Padding = UDim.new(0, 10)
+                    })
+                })
+            }),
+            utility:Create("ImageLabel", {
+                Name = "TopBar",
+                BackgroundTransparency = 1,
+                ClipsDescendants = true,
+                Size = UDim2.new(1, 0, 0, 38),
+                ZIndex = 5,
+                Image = "rbxassetid://5028857472",
+                ImageColor3 = Library.Theme.SecondaryColor,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(4, 4, 296, 296)
+            }, {
+                utility:Create("TextLabel", {
+                    Name = "Title",
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 12, 0, 19),
+                    Size = UDim2.new(1, -46, 0, 16),
+                    ZIndex = 5,
+                    Font = Library.Theme.BoldFont,
+                    Text = name,
+                    TextColor3 = Library.Theme.TextColor,
+                    TextSize = Library.Theme.BoldTextSize,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                })
+            })
+        })
+    })
 
     -- Dragging Logic
     local dragging, dragStart, startPos
-    Window.TitleBar.InputBegan:Connect(function(input)
+    Window.Main.TopBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
-            startPos = Window.MainFrame.Position
+            startPos = Window.Main.Position
         end
     end)
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            Window.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            Window.Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
     UserInputService.InputEnded:Connect(function()
@@ -118,251 +202,651 @@ function Library:CreateWindow(name, size, position)
     end)
 
     -- Minimize Logic
-    Window.MinimizeButton.MouseButton1Click:Connect(function()
-        Window.MainFrame.Visible = false
-        local restoreButton = Instance.new("TextButton")
-        restoreButton.Size = UDim2.new(0, 120, 0, 30)
-        restoreButton.Position = UDim2.new(0.5, -60, 0, 10)
-        restoreButton.BackgroundColor3 = Library.Theme.PrimaryColor
-        restoreButton.BorderColor3 = Library.Theme.BorderColor
-        restoreButton.Text = "🔼 Restore GUI"
-        restoreButton.TextColor3 = Library.Theme.TextColor
-        restoreButton.Font = Library.Theme.BoldFont
-        restoreButton.TextSize = 16
-        restoreButton.ZIndex = 99
-        restoreButton.Parent = Window.ScreenGui
+    Window.Main.TopBar.MinimizeButton = utility:Create("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -60, 0, 0),
+        BackgroundColor3 = Library.Theme.ButtonColor,
+        Text = "-",
+        TextColor3 = Library.Theme.TextColor,
+        Font = Library.Theme.BoldFont,
+        TextSize = Library.Theme.BoldTextSize,
+        Parent = Window.Main.TopBar
+    })
+
+    Window.Main.TopBar.MinimizeButton.MouseButton1Click:Connect(function()
+        Window.Main.Visible = false
+        local restoreButton = utility:Create("TextButton", {
+            Size = UDim2.new(0, 120, 0, 30),
+            Position = UDim2.new(0.5, -60, 0, 10),
+            BackgroundColor3 = Library.Theme.PrimaryColor,
+            BorderColor3 = Library.Theme.BorderColor,
+            Text = "🔼 Restore GUI",
+            TextColor3 = Library.Theme.TextColor,
+            Font = Library.Theme.BoldFont,
+            TextSize = 16,
+            ZIndex = 99,
+            Parent = Window.ScreenGui
+        })
 
         restoreButton.MouseButton1Click:Connect(function()
-            Window.MainFrame.Visible = true
+            Window.Main.Visible = true
             restoreButton:Destroy()
         end)
     end)
 
     -- Close Logic
-    Window.CloseButton.MouseButton1Click:Connect(function()
+    Window.Main.TopBar.CloseButton = utility:Create("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -30, 0, 0),
+        BackgroundColor3 = Library.Theme.ButtonColor,
+        Text = "X",
+        TextColor3 = Library.Theme.TextColor,
+        Font = Library.Theme.BoldFont,
+        TextSize = Library.Theme.BoldTextSize,
+        Parent = Window.Main.TopBar
+    })
+
+    Window.Main.TopBar.CloseButton.MouseButton1Click:Connect(function()
         Window.ScreenGui:Destroy()
     end)
 
-    -- Add Tab Function
     function Window:AddTab(name)
         local Tab = {}
         Tab.Name = name
         Tab.Elements = {}
 
         -- Tab Button
-        Tab.Button = Instance.new("TextButton")
-        Tab.Button.Size = UDim2.new(0, 80, 1, 0)
-        Tab.Button.BackgroundColor3 = Library.Theme.TabColor
-        Tab.Button.Text = name
-        Tab.Button.TextColor3 = Library.Theme.TextColor
-        Tab.Button.Font = Library.Theme.Font
-        Tab.Button.TextSize = Library.Theme.TextSize
-        Tab.Button.Parent = Window.TabBar
+        Tab.Button = utility:Create("TextButton", {
+            Name = name,
+            Parent = Window.Main.Pages.Pages_Container,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 26),
+            ZIndex = 3,
+            AutoButtonColor = false,
+            Font = Library.Theme.Font,
+            Text = "",
+            TextSize = 14
+        }, {
+            utility:Create("TextLabel", {
+                Name = "Title",
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 40, 0.5, 0),
+                Size = UDim2.new(0, 76, 1, 0),
+                ZIndex = 3,
+                Font = Library.Theme.Font,
+                Text = name,
+                TextColor3 = Library.Theme.TextColor,
+                TextSize = 12,
+                TextTransparency = 0.65,
+                TextXAlignment = Enum.TextXAlignment.Left
+            }),
+            utility:Create("ImageLabel", {
+                Name = "Icon",
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 12, 0.5, 0),
+                Size = UDim2.new(0, 16, 0, 16),
+                ZIndex = 3,
+                Image = "rbxassetid://5012539403",
+                ImageColor3 = Library.Theme.TextColor,
+                ImageTransparency = 0.64
+            })
+        })
 
         -- Tab Frame
-        Tab.Frame = Instance.new("Frame")
-        Tab.Frame.Size = UDim2.new(1, 0, 1, -60)
-        Tab.Frame.Position = UDim2.new(0, 0, 0, 60)
-        Tab.Frame.BackgroundColor3 = Library.Theme.PrimaryColor
-        Tab.Frame.BorderSizePixel = 0
-        Tab.Frame.Visible = (#Window.Tabs == 0)
-        Tab.Frame.Parent = Window.MainFrame
-
-        -- Scrolling Frame for Tab Content
-        Tab.ScrollingFrame = Instance.new("ScrollingFrame")
-        Tab.ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-        Tab.ScrollingFrame.Position = UDim2.new(0, 0, 0, 0)
-        Tab.ScrollingFrame.BackgroundTransparency = 1
-        Tab.ScrollingFrame.ScrollBarThickness = 5
-        Tab.ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
-        Tab.ScrollingFrame.Parent = Tab.Frame
-
-        local tabLayout = Instance.new("UIListLayout")
-        tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        tabLayout.Padding = UDim.new(0, 8) -- Default padding
-        tabLayout.Parent = Tab.ScrollingFrame
+        Tab.Frame = utility:Create("ScrollingFrame", {
+            Name = name,
+            Parent = Window.Main,
+            Active = true,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 134, 0, 46),
+            Size = UDim2.new(1, -142, 1, -56),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarThickness = 3,
+            ScrollBarImageColor3 = Library.Theme.SecondaryColor,
+            Visible = false
+        }, {
+            utility:Create("UIListLayout", {
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 10)
+            })
+        })
 
         -- Update CanvasSize when elements are added
-        tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Tab.ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y)
+        Tab.Frame.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Tab.Frame.CanvasSize = UDim2.new(0, 0, 0, Tab.Frame.UIListLayout.AbsoluteContentSize.Y)
         end)
 
         -- Tab Switching
         Tab.Button.MouseButton1Click:Connect(function()
             for _, tab in pairs(Window.Tabs) do
                 tab.Frame.Visible = false
+                tab.Button.Title.TextTransparency = 0.65
+                tab.Button.Title.Font = Library.Theme.Font
+                if tab.Button:FindFirstChild("Icon") then
+                    tab.Button.Icon.ImageTransparency = 0.65
+                end
             end
             Tab.Frame.Visible = true
+            Tab.Button.Title.TextTransparency = 0
+            Tab.Button.Title.Font = Library.Theme.BoldFont
+            if Tab.Button:FindFirstChild("Icon") then
+                Tab.Button.Icon.ImageTransparency = 0
+            end
         end)
 
-        -- Add Element Function
-        function Tab:AddLabel(text)
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 100, 0, 30)
-            Label.BackgroundTransparency = 1
-            Label.Text = text
-            Label.TextColor3 = Library.Theme.TextColor
-            Label.Font = Library.Theme.Font
-            Label.TextSize = Library.Theme.TextSize
-            Label.Parent = Tab.ScrollingFrame
-            table.insert(Tab.Elements, Label)
-            return Label
-        end
+        function Tab:AddSection(title)
+            local Section = {}
+            Section.Elements = {}
 
-        function Tab:AddButton(text, callback)
-            local Button = Instance.new("TextButton")
-            Button.Size = UDim2.new(0, 100, 0, 35) -- Adjusted to match textbox height
-            Button.BackgroundColor3 = Library.Theme.SecondaryColor
-            Button.Text = text
-            Button.TextColor3 = Library.Theme.TextColor
-            Button.Font = Library.Theme.Font
-            Button.TextSize = Library.Theme.TextSize
-            Button.Parent = Tab.ScrollingFrame
-            Button.MouseButton1Click:Connect(callback)
-            table.insert(Tab.Elements, Button)
-            return Button
-        end
+            Section.Frame = utility:Create("ImageLabel", {
+                Name = title,
+                Parent = Tab.Frame,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 0, 28),
+                ZIndex = 2,
+                Image = "rbxassetid://5028857472",
+                ImageColor3 = Library.Theme.SecondaryColor,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(4, 4, 296, 296),
+                ClipsDescendants = true
+            }, {
+                utility:Create("Frame", {
+                    Name = "Container",
+                    Active = true,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 8, 0, 8),
+                    Size = UDim2.new(1, -16, 1, -16)
+                }, {
+                    utility:Create("TextLabel", {
+                        Name = "Title",
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 0, 20),
+                        ZIndex = 2,
+                        Font = Library.Theme.BoldFont,
+                        Text = title,
+                        TextColor3 = Library.Theme.TextColor,
+                        TextSize = 14,
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    utility:Create("UIListLayout", {
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Padding = UDim.new(0, 8)
+                    })
+                })
+            })
 
-        function Tab:AddToggle(text, default, callback)
-            local Toggle = Instance.new("TextButton")
-            Toggle.Size = UDim2.new(0, 100, 0, 35) -- Adjusted to match textbox height
-            Toggle.BackgroundColor3 = Library.Theme.SecondaryColor
-            Toggle.Text = default and (text .. ": On") or (text .. ": Off")
-            Toggle.TextColor3 = Library.Theme.TextColor
-            Toggle.Font = Library.Theme.Font
-            Toggle.TextSize = Library.Theme.TextSize
-            Toggle.Parent = Tab.ScrollingFrame
+            Section.ScrollingFrame = Section.Frame.Container
 
-            local state = default
-            Toggle.MouseButton1Click:Connect(function()
-                state = not state
-                Toggle.Text = state and (text .. ": On") or (text .. ": Off")
-                callback(state)
-            end)
-            table.insert(Tab.Elements, Toggle)
-            return Toggle
-        end
-
-        function Tab:AddTextbox(text, default, callback)
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 280, 0, 35) -- Adjusted to fit new textbox size
-            Label.BackgroundTransparency = 1
-            Label.Text = text
-            Label.TextColor3 = Library.Theme.TextColor
-            Label.Font = Library.Theme.Font
-            Label.TextSize = Library.Theme.TextSize
-            Label.ClipsDescendants = true
-            Label.Visible = true
-            Label.ZIndex = 5
-            Label.Parent = Tab.ScrollingFrame
-
-            local Textbox = Instance.new("TextBox")
-            Textbox.Size = UDim2.new(0, 180, 0, 35) -- Adjusted size for better usability
-            Textbox.Position = UDim2.new(0, 90, 0, 0)
-            Textbox.BackgroundColor3 = Library.Theme.SecondaryColor
-            Textbox.Text = default or ""
-            Textbox.TextColor3 = Library.Theme.TextColor
-            Textbox.Font = Library.Theme.Font
-            Textbox.TextSize = 16 -- Adjusted text size for readability
-            Textbox.TextWrapped = true
-            Textbox.Visible = true
-            Textbox.ZIndex = 5
-            Textbox.Parent = Label
-
-            -- Safety check to prevent disappearing
-            Textbox:GetPropertyChangedSignal("Visible"):Connect(function()
-                if not Textbox.Visible then
-                    Textbox.Visible = true
-                end
-            end)
-            Label:GetPropertyChangedSignal("Visible"):Connect(function()
-                if not Label.Visible then
-                    Label.Visible = true
-                end
-            end)
-
-            Textbox.FocusLost:Connect(function()
-                callback(Textbox.Text)
-            end)
-            table.insert(Tab.Elements, Label)
-            return Textbox
-        end
-
-        function Tab:AddDropdown(text, options, default, callback)
-            local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 280, 0, 35) -- Adjusted to match textbox container size
-            Label.BackgroundTransparency = 1
-            Label.Text = text
-            Label.TextColor3 = Library.Theme.TextColor
-            Label.Font = Library.Theme.Font
-            Label.TextSize = Library.Theme.TextSize
-            Label.ZIndex = 5
-            Label.Parent = Tab.ScrollingFrame
-
-            local Dropdown = Instance.new("TextButton")
-            Dropdown.Size = UDim2.new(0, 100, 0, 30)
-            Dropdown.Position = UDim2.new(0, 90, 0, 0)
-            Dropdown.BackgroundColor3 = Library.Theme.SecondaryColor
-            Dropdown.Text = default
-            Dropdown.TextColor3 = Library.Theme.TextColor
-            Dropdown.Font = Library.Theme.Font
-            Dropdown.TextSize = Library.Theme.TextSize
-            Dropdown.ZIndex = 5
-            Dropdown.Parent = Label
-
-            local DropdownFrame = Instance.new("ScrollingFrame")
-            DropdownFrame.Size = UDim2.new(0, 100, 0, 120)
-            DropdownFrame.Position = UDim2.new(0, 90, 0, 30)
-            DropdownFrame.BackgroundColor3 = Library.Theme.SecondaryColor
-            DropdownFrame.Visible = false
-            DropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
-            DropdownFrame.ScrollBarThickness = 5
-            DropdownFrame.ZIndex = 10
-            DropdownFrame.Parent = Label
-
-            local dropdownLayout = Instance.new("UIListLayout")
-            dropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            dropdownLayout.Parent = DropdownFrame
-
-            for i, option in ipairs(options) do
-                local OptionButton = Instance.new("TextButton")
-                OptionButton.Size = UDim2.new(1, 0, 0, 30)
-                OptionButton.BackgroundTransparency = 1
-                OptionButton.Text = option
-                OptionButton.TextColor3 = Library.Theme.TextColor
-                OptionButton.Font = Library.Theme.Font
-                OptionButton.TextSize = Library.Theme.TextSize
-                OptionButton.ZIndex = 10
-                OptionButton.Parent = DropdownFrame
-
-                OptionButton.MouseButton1Click:Connect(function()
-                    Dropdown.Text = option
-                    DropdownFrame.Visible = false
-                    tabLayout.Padding = UDim.new(0, 8)
-                    callback(option)
-                end)
+            function Section:AddLabel(text)
+                local Label = utility:Create("TextLabel", {
+                    Name = "Label",
+                    Parent = Section.ScrollingFrame,
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    ZIndex = 2,
+                    Font = Library.Theme.Font,
+                    Text = text,
+                    TextColor3 = Library.Theme.TextColor,
+                    TextSize = Library.Theme.TextSize,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                })
+                table.insert(Section.Elements, Label)
+                return Label
             end
 
-            Dropdown.MouseButton1Click:Connect(function()
-                local isVisible = not DropdownFrame.Visible
-                DropdownFrame.Visible = isVisible
-                for _, child in pairs(Tab.ScrollingFrame:GetChildren()) do
-                    if child:IsA("TextLabel") then
-                        for _, subChild in pairs(child:GetChildren()) do
-                            if subChild:IsA("ScrollingFrame") and subChild ~= DropdownFrame then
-                                subChild.Visible = false
+            function Section:AddButton(text, callback)
+                local Button = utility:Create("TextButton", {
+                    Name = "Button",
+                    Parent = Section.ScrollingFrame,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    ZIndex = 2,
+                    Image = "rbxassetid://5028857472",
+                    ImageColor3 = Library.Theme.SecondaryColor,
+                    ScaleType = Enum.ScaleType.Slice,
+                    SliceCenter = Rect.new(2, 2, 298, 298)
+                }, {
+                    utility:Create("TextLabel", {
+                        Name = "Title",
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 1, 0),
+                        ZIndex = 3,
+                        Font = Library.Theme.Font,
+                        Text = text,
+                        TextColor3 = Library.Theme.TextColor,
+                        TextSize = Library.Theme.TextSize
+                    })
+                })
+
+                table.insert(Section.Elements, Button)
+
+                Button.MouseButton1Click:Connect(function()
+                    utility:Pop(Button, 10)
+                    callback()
+                end)
+
+                return Button
+            end
+
+            function Section:AddToggle(text, default, callback)
+                local Toggle = utility:Create("TextButton", {
+                    Name = "Toggle",
+                    Parent = Section.ScrollingFrame,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    ZIndex = 2,
+                    Image = "rbxassetid://5028857472",
+                    ImageColor3 = Library.Theme.SecondaryColor,
+                    ScaleType = Enum.ScaleType.Slice,
+                    SliceCenter = Rect.new(2, 2, 298, 298)
+                }, {
+                    utility:Create("TextLabel", {
+                        Name = "Title",
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 10, 0.5, 0),
+                        Size = UDim2.new(0.5, 0, 1, 0),
+                        ZIndex = 3,
+                        Font = Library.Theme.Font,
+                        Text = text,
+                        TextColor3 = Library.Theme.TextColor,
+                        TextSize = Library.Theme.TextSize,
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    utility:Create("ImageLabel", {
+                        Name = "Button",
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Position = UDim2.new(1, -50, 0.5, -8),
+                        Size = UDim2.new(0, 40, 0, 16),
+                        ZIndex = 2,
+                        Image = "rbxassetid://5028857472",
+                        ImageColor3 = Library.Theme.PrimaryColor,
+                        ScaleType = Enum.ScaleType.Slice,
+                        SliceCenter = Rect.new(2, 2, 298, 298)
+                    }, {
+                        utility:Create("ImageLabel", {
+                            Name = "Frame",
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 2, 0.5, -6),
+                            Size = UDim2.new(1, -22, 1, -4),
+                            ZIndex = 2,
+                            Image = "rbxassetid://5028857472",
+                            ImageColor3 = Library.Theme.TextColor,
+                            ScaleType = Enum.ScaleType.Slice,
+                            SliceCenter = Rect.new(2, 2, 298, 298)
+                        })
+                    })
+                })
+
+                table.insert(Section.Elements, Toggle)
+
+                local state = default
+                local position = {
+                    On = UDim2.new(0, 20, 0.5, -6),
+                    Off = UDim2.new(0, 2, 0.5, -6)
+                }
+                local frame = Toggle.Button.Frame
+                Toggle.Button.Title.Text = state and (text .. ": On") or (text .. ": Off")
+                frame.Position = state and position.On or position.Off
+
+                Toggle.MouseButton1Click:Connect(function()
+                    state = not state
+                    Toggle.Button.Title.Text = state and (text .. ": On") or (text .. ": Off")
+                    utility:Tween(frame, {Position = state and position.On or position.Off}, 0.2)
+                    callback(state)
+                end)
+
+                return Toggle
+            end
+
+            function Section:AddTextbox(text, default, callback)
+                local Textbox = utility:Create("ImageButton", {
+                    Name = "Textbox",
+                    Parent = Section.ScrollingFrame,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    ZIndex = 2,
+                    Image = "rbxassetid://5028857472",
+                    ImageColor3 = Library.Theme.SecondaryColor,
+                    ScaleType = Enum.ScaleType.Slice,
+                    SliceCenter = Rect.new(2, 2, 298, 298)
+                }, {
+                    utility:Create("TextLabel", {
+                        Name = "Title",
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 10, 0.5, 0),
+                        Size = UDim2.new(0.5, 0, 1, 0),
+                        ZIndex = 3,
+                        Font = Library.Theme.Font,
+                        Text = text,
+                        TextColor3 = Library.Theme.TextColor,
+                        TextSize = Library.Theme.TextSize,
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    utility:Create("ImageLabel", {
+                        Name = "Button",
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(1, -110, 0.5, -8),
+                        Size = UDim2.new(0, 100, 0, 16),
+                        ZIndex = 2,
+                        Image = "rbxassetid://5028857472",
+                        ImageColor3 = Library.Theme.PrimaryColor,
+                        ScaleType = Enum.ScaleType.Slice,
+                        SliceCenter = Rect.new(2, 2, 298, 298)
+                    }, {
+                        utility:Create("TextBox", {
+                            Name = "Textbox",
+                            BackgroundTransparency = 1,
+                            TextTruncate = Enum.TextTruncate.AtEnd,
+                            Position = UDim2.new(0, 5, 0, 0),
+                            Size = UDim2.new(1, -10, 1, 0),
+                            ZIndex = 3,
+                            Font = Library.Theme.BoldFont,
+                            Text = default or "",
+                            TextColor3 = Library.Theme.TextColor,
+                            TextSize = 12,
+                            TextXAlignment = Enum.TextXAlignment.Center
+                        })
+                    })
+                })
+
+                table.insert(Section.Elements, Textbox)
+
+                local button = Textbox.Button
+                local input = button.Textbox
+
+                Textbox.MouseButton1Click:Connect(function()
+                    if Textbox.Button.Size ~= UDim2.new(0, 100, 0, 16) then
+                        return
+                    end
+                    utility:Tween(Textbox.Button, {
+                        Size = UDim2.new(0, 200, 0, 16),
+                        Position = UDim2.new(1, -210, 0.5, -8)
+                    }, 0.2)
+                    wait()
+                    input.TextXAlignment = Enum.TextXAlignment.Left
+                    input:CaptureFocus()
+                end)
+
+                input.FocusLost:Connect(function()
+                    input.TextXAlignment = Enum.TextXAlignment.Center
+                    utility:Tween(Textbox.Button, {
+                        Size = UDim2.new(0, 100, 0, 16),
+                        Position = UDim2.new(1, -110, 0.5, -8)
+                    }, 0.2)
+                    callback(input.Text)
+                end)
+
+                return Textbox
+            end
+
+            function Section:AddDropdown(text, options, default, callback)
+                local Dropdown = utility:Create("Frame", {
+                    Name = "Dropdown",
+                    Parent = Section.ScrollingFrame,
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 0, 35),
+                    ClipsDescendants = true
+                }, {
+                    utility:Create("UIListLayout", {
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Padding = UDim.new(0, 4)
+                    }),
+                    utility:Create("ImageLabel", {
+                        Name = "Search",
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Size = UDim2.new(1, 0, 0, 35),
+                        ZIndex = 2,
+                        Image = "rbxassetid://5028857472",
+                        ImageColor3 = Library.Theme.SecondaryColor,
+                        ScaleType = Enum.ScaleType.Slice,
+                        SliceCenter = Rect.new(2, 2, 298, 298)
+                    }, {
+                        utility:Create("TextBox", {
+                            Name = "TextBox",
+                            AnchorPoint = Vector2.new(0, 0.5),
+                            BackgroundTransparency = 1,
+                            TextTruncate = Enum.TextTruncate.AtEnd,
+                            Position = UDim2.new(0, 10, 0.5, 0),
+                            Size = UDim2.new(1, -42, 1, 0),
+                            ZIndex = 3,
+                            Font = Library.Theme.Font,
+                            Text = default or text,
+                            TextColor3 = Library.Theme.TextColor,
+                            TextSize = Library.Theme.TextSize,
+                            TextXAlignment = Enum.TextXAlignment.Left
+                        }),
+                        utility:Create("ImageButton", {
+                            Name = "Button",
+                            BackgroundTransparency = 1,
+                            BorderSizePixel = 0,
+                            Position = UDim2.new(1, -28, 0.5, -9),
+                            Size = UDim2.new(0, 18, 0, 18),
+                            ZIndex = 3,
+                            Image = "rbxassetid://5012539403",
+                            ImageColor3 = Library.Theme.TextColor,
+                            SliceCenter = Rect.new(2, 2, 298, 298)
+                        })
+                    }),
+                    utility:Create("ImageLabel", {
+                        Name = "List",
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Size = UDim2.new(1, 0, 1, -39),
+                        ZIndex = 2,
+                        Image = "rbxassetid://5028857472",
+                        ImageColor3 = Library.Theme.PrimaryColor,
+                        ScaleType = Enum.ScaleType.Slice,
+                        SliceCenter = Rect.new(2, 2, 298, 298)
+                    }, {
+                        utility:Create("ScrollingFrame", {
+                            Name = "Frame",
+                            Active = true,
+                            BackgroundTransparency = 1,
+                            BorderSizePixel = 0,
+                            Position = UDim2.new(0, 4, 0, 4),
+                            Size = UDim2.new(1, -8, 1, -8),
+                            CanvasPosition = Vector2.new(0, 0),
+                            CanvasSize = UDim2.new(0, 0, 0, 0),
+                            ZIndex = 2,
+                            ScrollBarThickness = 3,
+                            ScrollBarImageColor3 = Library.Theme.SecondaryColor
+                        }, {
+                            utility:Create("UIListLayout", {
+                                SortOrder = Enum.SortOrder.LayoutOrder,
+                                Padding = UDim.new(0, 4)
+                            })
+                        })
+                    })
+                })
+
+                table.insert(Section.Elements, Dropdown)
+
+                local search = Dropdown.Search
+                local focused = false
+                local list = options or {}
+
+                search.Button.MouseButton1Click:Connect(function()
+                    if search.Button.Rotation == 0 then
+                        local currentList = utility:Sort(search.TextBox.Text, list)
+                        currentList = #currentList ~= 0 and currentList or nil
+                        local entries = math.clamp(#currentList, 0, 3)
+                        utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, (entries == 0 and 35) or entries * 39 + 39)}, 0.3)
+                        utility:Tween(search.Button, {Rotation = 180}, 0.3)
+
+                        for i, button in pairs(Dropdown.List.Frame:GetChildren()) do
+                            if button:IsA("ImageButton") then
+                                button:Destroy()
                             end
                         end
+
+                        for i, value in pairs(currentList or {}) do
+                            local button = utility:Create("ImageButton", {
+                                Parent = Dropdown.List.Frame,
+                                BackgroundTransparency = 1,
+                                BorderSizePixel = 0,
+                                Size = UDim2.new(1, 0, 0, 35),
+                                ZIndex = 2,
+                                Image = "rbxassetid://5028857472",
+                                ImageColor3 = Library.Theme.SecondaryColor,
+                                ScaleType = Enum.ScaleType.Slice,
+                                SliceCenter = Rect.new(2, 2, 298, 298)
+                            }, {
+                                utility:Create("TextLabel", {
+                                    BackgroundTransparency = 1,
+                                    Position = UDim2.new(0, 10, 0, 0),
+                                    Size = UDim2.new(1, -10, 1, 0),
+                                    ZIndex = 3,
+                                    Font = Library.Theme.Font,
+                                    Text = tostring(value),
+                                    TextColor3 = Library.Theme.TextColor,
+                                    TextSize = Library.Theme.TextSize,
+                                    TextXAlignment = Enum.TextXAlignment.Left,
+                                    TextTransparency = 0.1
+                                })
+                            })
+
+                            button.MouseButton1Click:Connect(function()
+                                search.TextBox.Text = tostring(value)
+                                callback(value)
+                                utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, 35)}, 0.3)
+                                utility:Tween(search.Button, {Rotation = 0}, 0.3)
+                            end)
+                        end
+
+                        Dropdown.List.Frame.CanvasSize = UDim2.new(0, 0, 0, (#currentList * 39) - 4)
+                        Dropdown.List.Frame.ScrollBarImageTransparency = #currentList > 3 and 0 or 1
+                    else
+                        utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, 35)}, 0.3)
+                        utility:Tween(search.Button, {Rotation = 0}, 0.3)
                     end
-                end
-                if isVisible then
-                    tabLayout.Padding = UDim.new(0, 130)
-                else
-                    tabLayout.Padding = UDim.new(0, 8)
-                end
-            end)
-            table.insert(Tab.Elements, Label)
-            return Dropdown
+                end)
+
+                search.TextBox.Focused:Connect(function()
+                    focused = true
+                    if search.Button.Rotation == 0 then
+                        local currentList = utility:Sort(search.TextBox.Text, list)
+                        currentList = #currentList ~= 0 and currentList or nil
+                        local entries = math.clamp(#currentList, 0, 3)
+                        utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, (entries == 0 and 35) or entries * 39 + 39)}, 0.3)
+                        utility:Tween(search.Button, {Rotation = 180}, 0.3)
+
+                        for i, button in pairs(Dropdown.List.Frame:GetChildren()) do
+                            if button:IsA("ImageButton") then
+                                button:Destroy()
+                            end
+                        end
+
+                        for i, value in pairs(currentList or {}) do
+                            local button = utility:Create("ImageButton", {
+                                Parent = Dropdown.List.Frame,
+                                BackgroundTransparency = 1,
+                                BorderSizePixel = 0,
+                                Size = UDim2.new(1, 0, 0, 35),
+                                ZIndex = 2,
+                                Image = "rbxassetid://5028857472",
+                                ImageColor3 = Library.Theme.SecondaryColor,
+                                ScaleType = Enum.ScaleType.Slice,
+                                SliceCenter = Rect.new(2, 2, 298, 298)
+                            }, {
+                                utility:Create("TextLabel", {
+                                    BackgroundTransparency = 1,
+                                    Position = UDim2.new(0, 10, 0, 0),
+                                    Size = UDim2.new(1, -10, 1, 0),
+                                    ZIndex = 3,
+                                    Font = Library.Theme.Font,
+                                    Text = tostring(value),
+                                    TextColor3 = Library.Theme.TextColor,
+                                    TextSize = Library.Theme.TextSize,
+                                    TextXAlignment = Enum.TextXAlignment.Left,
+                                    TextTransparency = 0.1
+                                })
+                            })
+
+                            button.MouseButton1Click:Connect(function()
+                                search.TextBox.Text = tostring(value)
+                                callback(value)
+                                utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, 35)}, 0.3)
+                                utility:Tween(search.Button, {Rotation = 0}, 0.3)
+                            end)
+                        end
+
+                        Dropdown.List.Frame.CanvasSize = UDim2.new(0, 0, 0, (#currentList * 39) - 4)
+                        Dropdown.List.Frame.ScrollBarImageTransparency = #currentList > 3 and 0 or 1
+                    end
+                end)
+
+                search.TextBox.FocusLost:Connect(function()
+                    focused = false
+                end)
+
+                search.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
+                    if focused then
+                        local currentList = utility:Sort(search.TextBox.Text, list)
+                        currentList = #currentList ~= 0 and currentList or nil
+                        local entries = math.clamp(#currentList, 0, 3)
+                        utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, (entries == 0 and 35) or entries * 39 + 39)}, 0.3)
+
+                        for i, button in pairs(Dropdown.List.Frame:GetChildren()) do
+                            if button:IsA("ImageButton") then
+                                button:Destroy()
+                            end
+                        end
+
+                        for i, value in pairs(currentList or {}) do
+                            local button = utility:Create("ImageButton", {
+                                Parent = Dropdown.List.Frame,
+                                BackgroundTransparency = 1,
+                                BorderSizePixel = 0,
+                                Size = UDim2.new(1, 0, 0, 35),
+                                ZIndex = 2,
+                                Image = "rbxassetid://5028857472",
+                                ImageColor3 = Library.Theme.SecondaryColor,
+                                ScaleType = Enum.ScaleType.Slice,
+                                SliceCenter = Rect.new(2, 2, 298, 298)
+                            }, {
+                                utility:Create("TextLabel", {
+                                    BackgroundTransparency = 1,
+                                    Position = UDim2.new(0, 10, 0, 0),
+                                    Size = UDim2.new(1, -10, 1, 0),
+                                    ZIndex = 3,
+                                    Font = Library.Theme.Font,
+                                    Text = tostring(value),
+                                    TextColor3 = Library.Theme.TextColor,
+                                    TextSize = Library.Theme.TextSize,
+                                    TextXAlignment = Enum.TextXAlignment.Left,
+                                    TextTransparency = 0.1
+                                })
+                            })
+
+                            button.MouseButton1Click:Connect(function()
+                                search.TextBox.Text = tostring(value)
+                                callback(value)
+                                utility:Tween(Dropdown, {Size = UDim2.new(1, 0, 0, 35)}, 0.3)
+                                utility:Tween(search.Button, {Rotation = 0}, 0.3)
+                            end)
+                        end
+
+                        Dropdown.List.Frame.CanvasSize = UDim2.new(0, 0, 0, (#currentList * 39) - 4)
+                        Dropdown.List.Frame.ScrollBarImageTransparency = #currentList > 3 and 0 or 1
+                    end
+                end)
+
+                return Dropdown
+            end
+
+            return Section
         end
 
         table.insert(Window.Tabs, Tab)
