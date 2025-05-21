@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.5"
+    Version = "2.6"
 }
 
 print("Toaster Hub Library v" .. Library.Version .. " loaded")
@@ -105,7 +105,7 @@ function Library:CreateWindow(name)
     Window.TabContainer.BorderSizePixel = 0
     Window.TabContainer.Parent = contentFrame
 
-    -- Dragging Logic
+    -- Drag
     local dragging, dragStart, startPos
     Window.TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -114,7 +114,6 @@ function Library:CreateWindow(name)
             startPos = Window.MainFrame.Position
         end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
@@ -124,7 +123,6 @@ function Library:CreateWindow(name)
             )
         end
     end)
-
     UserInputService.InputEnded:Connect(function()
         dragging = false
     end)
@@ -195,7 +193,6 @@ function Library:CreateWindow(name)
             Tab.Frame.Visible = true
         end)
 
-        -- Wrapped UI components to avoid overlap
         function Tab:AddLabel(text)
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -20, 0, 30)
@@ -281,6 +278,7 @@ function Library:CreateWindow(name)
             local Holder = Instance.new("Frame")
             Holder.Size = UDim2.new(1, -20, 0, 40)
             Holder.BackgroundTransparency = 1
+            Holder.ClipsDescendants = true
             Holder.Parent = Tab.Frame
 
             local Label = Instance.new("TextLabel")
@@ -292,6 +290,7 @@ function Library:CreateWindow(name)
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
             Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.ZIndex = 1
             Label.Parent = Holder
 
             local Dropdown = Instance.new("TextButton")
@@ -302,37 +301,42 @@ function Library:CreateWindow(name)
             Dropdown.TextColor3 = Library.Theme.TextColor
             Dropdown.Font = Library.Theme.Font
             Dropdown.TextSize = Library.Theme.TextSize
+            Dropdown.ZIndex = 2
             Dropdown.Parent = Holder
 
-            local List = Instance.new("Frame")
-            List.Size = UDim2.new(0.6, 0, 0, #options * 30)
-            List.Position = UDim2.new(0.4, 0, 1, 0)
-            List.BackgroundColor3 = Library.Theme.SecondaryColor
-            List.Visible = false
-            List.ZIndex = 20
-            List.Parent = Holder
+            local Scroll = Instance.new("ScrollingFrame")
+            Scroll.Size = UDim2.new(0.6, 0, 0, 120)
+            Scroll.Position = UDim2.new(0.4, 0, 1, 0)
+            Scroll.BackgroundColor3 = Library.Theme.SecondaryColor
+            Scroll.Visible = false
+            Scroll.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+            Scroll.ScrollBarThickness = 5
+            Scroll.ClipsDescendants = true
+            Scroll.ZIndex = 3
+            Scroll.Parent = Holder
 
-            local layout = Instance.new("UIListLayout", List)
+            local layout = Instance.new("UIListLayout", Scroll)
             layout.SortOrder = Enum.SortOrder.LayoutOrder
 
             for _, opt in ipairs(options) do
                 local B = Instance.new("TextButton")
                 B.Size = UDim2.new(1, 0, 0, 30)
-                B.Text = opt
                 B.BackgroundTransparency = 1
+                B.Text = opt
                 B.TextColor3 = Library.Theme.TextColor
                 B.Font = Library.Theme.Font
                 B.TextSize = Library.Theme.TextSize
-                B.Parent = List
+                B.ZIndex = 4
+                B.Parent = Scroll
                 B.MouseButton1Click:Connect(function()
                     Dropdown.Text = opt
-                    List.Visible = false
+                    Scroll.Visible = false
                     callback(opt)
                 end)
             end
 
             Dropdown.MouseButton1Click:Connect(function()
-                List.Visible = not List.Visible
+                Scroll.Visible = not Scroll.Visible
             end)
 
             table.insert(Tab.Elements, Holder)
