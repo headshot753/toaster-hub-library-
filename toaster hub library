@@ -1,4 +1,4 @@
--- Toaster Hub Library (Fixed MinimizeButton Issue Again, Enhanced Dropdowns and GUI Layout)
+-- Toaster Hub Library (Fixed Glow Issue, Enhanced Dropdowns and GUI Layout)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.8"
+    Version = "2.9"
 }
 
 -- Debug print to confirm library version
@@ -118,7 +118,7 @@ function Library:CreateWindow(name, size, position)
     })
 
     -- Glow
-    Window.Main.Glow = utility:Create("ImageLabel", {
+    local glow = utility:Create("ImageLabel", {
         Name = "Glow",
         BackgroundTransparency = 1,
         Position = UDim2.new(0, -15, 0, -15),
@@ -130,9 +130,10 @@ function Library:CreateWindow(name, size, position)
         SliceCenter = Rect.new(24, 24, 276, 276),
         Parent = Window.Main
     })
+    Window.Main.Glow = glow
 
     -- Pages Sidebar
-    Window.Main.Pages = utility:Create("ImageLabel", {
+    local pages = utility:Create("ImageLabel", {
         Name = "Pages",
         BackgroundTransparency = 1,
         ClipsDescendants = true,
@@ -145,8 +146,9 @@ function Library:CreateWindow(name, size, position)
         SliceCenter = Rect.new(4, 4, 296, 296),
         Parent = Window.Main
     })
+    Window.Main.Pages = pages
 
-    Window.Main.Pages.Pages_Container = utility:Create("ScrollingFrame", {
+    local pagesContainer = utility:Create("ScrollingFrame", {
         Name = "Pages_Container",
         Active = true,
         BackgroundTransparency = 1,
@@ -162,9 +164,10 @@ function Library:CreateWindow(name, size, position)
             Padding = UDim.new(0, 10)
         })
     })
+    Window.Main.Pages.Pages_Container = pagesContainer
 
     -- TopBar
-    Window.Main.TopBar = utility:Create("ImageLabel", {
+    local topBar = utility:Create("ImageLabel", {
         Name = "TopBar",
         BackgroundTransparency = 1,
         ClipsDescendants = true,
@@ -190,13 +193,14 @@ function Library:CreateWindow(name, size, position)
             TextXAlignment = Enum.TextXAlignment.Left
         })
     })
+    Window.Main.TopBar = topBar
 
     -- Create Minimize and Close Buttons
     if not Window.Main.TopBar then
         error("Failed to create TopBar in Window.Main")
     end
 
-    Window.Main.TopBar.MinimizeButton = utility:Create("TextButton", {
+    local minimizeButton = utility:Create("TextButton", {
         Size = UDim2.new(0, 30, 0, 30),
         Position = UDim2.new(1, -60, 0, 0),
         BackgroundColor3 = Library.Theme.ButtonColor,
@@ -207,8 +211,9 @@ function Library:CreateWindow(name, size, position)
         ZIndex = 6,
         Parent = Window.Main.TopBar
     })
+    Window.Main.TopBar.MinimizeButton = minimizeButton
 
-    Window.Main.TopBar.CloseButton = utility:Create("TextButton", {
+    local closeButton = utility:Create("TextButton", {
         Size = UDim2.new(0, 30, 0, 30),
         Position = UDim2.new(1, -30, 0, 0),
         BackgroundColor3 = Library.Theme.ButtonColor,
@@ -219,6 +224,7 @@ function Library:CreateWindow(name, size, position)
         ZIndex = 6,
         Parent = Window.Main.TopBar
     })
+    Window.Main.TopBar.CloseButton = closeButton
 
     -- Dragging Logic
     local dragging, dragStart, startPos
