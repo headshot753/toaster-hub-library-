@@ -1,4 +1,4 @@
--- Toaster Hub Library (Adjusted Textbox Size and Window Size)
+--// Toaster Hub Library – Side Tabs & Mobile-Responsive UI (Part 1/2)
 
 local Library = {
     Theme = {
@@ -13,30 +13,30 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.3"
+    Version = "2.4"
 }
 
--- Debug print to confirm library version
-print("Toaster Hub Library Version " .. Library.Version .. " loaded")
+print("Toaster Hub Library v" .. Library.Version .. " loaded")
 
--- Services
 local UserInputService = game:GetService("UserInputService")
 
--- Window Creation
-function Library:CreateWindow(name, size, position)
+function Library:CreateWindow(name)
     local Window = {}
     Window.Tabs = {}
-    Window.Size = size or UDim2.new(0, 500, 0, 350) -- Increased window size for better layout
-    Window.Position = position or UDim2.new(0.5, -250, 0.5, -175) -- Adjusted position to center the larger window
 
-    -- ScreenGui
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    local width = math.clamp(screenSize.X * 0.8, 300, 700)
+    local height = math.clamp(screenSize.Y * 0.75, 300, 500)
+
+    Window.Size = UDim2.new(0, width, 0, height)
+    Window.Position = UDim2.new(0.5, -width / 2, 0.5, -height / 2)
+
     Window.ScreenGui = Instance.new("ScreenGui")
     Window.ScreenGui.Name = name .. "Gui"
-    Window.ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
     Window.ScreenGui.ResetOnSpawn = false
     Window.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    Window.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    -- Main Frame
     Window.MainFrame = Instance.new("Frame")
     Window.MainFrame.Size = Window.Size
     Window.MainFrame.Position = Window.Position
@@ -44,7 +44,6 @@ function Library:CreateWindow(name, size, position)
     Window.MainFrame.BorderColor3 = Library.Theme.BorderColor
     Window.MainFrame.Parent = Window.ScreenGui
 
-    -- Title Bar
     Window.TitleBar = Instance.new("Frame")
     Window.TitleBar.Size = UDim2.new(1, 0, 0, 30)
     Window.TitleBar.BackgroundColor3 = Library.Theme.SecondaryColor
@@ -61,7 +60,6 @@ function Library:CreateWindow(name, size, position)
     Window.TitleLabel.TextSize = Library.Theme.BoldTextSize
     Window.TitleLabel.Parent = Window.TitleBar
 
-    -- Minimize Button
     Window.MinimizeButton = Instance.new("TextButton")
     Window.MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
     Window.MinimizeButton.Position = UDim2.new(1, -60, 0, 0)
@@ -72,7 +70,6 @@ function Library:CreateWindow(name, size, position)
     Window.MinimizeButton.TextSize = Library.Theme.BoldTextSize
     Window.MinimizeButton.Parent = Window.TitleBar
 
-    -- Close Button
     Window.CloseButton = Instance.new("TextButton")
     Window.CloseButton.Size = UDim2.new(0, 30, 0, 30)
     Window.CloseButton.Position = UDim2.new(1, -30, 0, 0)
@@ -83,75 +80,85 @@ function Library:CreateWindow(name, size, position)
     Window.CloseButton.TextSize = Library.Theme.BoldTextSize
     Window.CloseButton.Parent = Window.TitleBar
 
-    -- Tab Bar
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Size = UDim2.new(1, 0, 1, -30)
+    contentFrame.Position = UDim2.new(0, 0, 0, 30)
+    contentFrame.BackgroundColor3 = Library.Theme.PrimaryColor
+    contentFrame.BorderSizePixel = 0
+    contentFrame.Parent = Window.MainFrame
+
     Window.TabBar = Instance.new("Frame")
-    Window.TabBar.Size = UDim2.new(1, 0, 0, 30)
-    Window.TabBar.Position = UDim2.new(0, 0, 0, 30)
+    Window.TabBar.Size = UDim2.new(0, 100, 1, 0)
     Window.TabBar.BackgroundColor3 = Library.Theme.TabColor
     Window.TabBar.BorderSizePixel = 0
-    Window.TabBar.Parent = Window.MainFrame
+    Window.TabBar.Parent = contentFrame
 
     local tabBarLayout = Instance.new("UIListLayout")
-    tabBarLayout.FillDirection = Enum.FillDirection.Horizontal
+    tabBarLayout.FillDirection = Enum.FillDirection.Vertical
     tabBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     tabBarLayout.Parent = Window.TabBar
 
-    -- Dragging Logic
+    Window.TabContainer = Instance.new("Frame")
+    Window.TabContainer.Size = UDim2.new(1, -100, 1, 0)
+    Window.TabContainer.Position = UDim2.new(0, 100, 0, 0)
+    Window.TabContainer.BackgroundColor3 = Library.Theme.PrimaryColor
+    Window.TabContainer.BorderSizePixel = 0
+    Window.TabContainer.Parent = contentFrame
+
+    -- Drag
     local dragging, dragStart, startPos
     Window.TitleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
             startPos = Window.MainFrame.Position
         end
     end)
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
-            Window.MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            Window.MainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
     UserInputService.InputEnded:Connect(function()
-        if dragging then
-            dragging = false
-        end
+        dragging = false
     end)
 
-    -- Minimize Logic
     Window.MinimizeButton.MouseButton1Click:Connect(function()
         Window.MainFrame.Visible = false
-        local restoreButton = Instance.new("TextButton")
-        restoreButton.Size = UDim2.new(0, 120, 0, 30)
-        restoreButton.Position = UDim2.new(0.5, -60, 0, 10)
-        restoreButton.BackgroundColor3 = Library.Theme.PrimaryColor
-        restoreButton.BorderColor3 = Library.Theme.BorderColor
-        restoreButton.Text = "🔼 Restore GUI"
-        restoreButton.TextColor3 = Library.Theme.TextColor
-        restoreButton.Font = Library.Theme.BoldFont
-        restoreButton.TextSize = 16
-        restoreButton.ZIndex = 99
-        restoreButton.Parent = Window.ScreenGui
+        local restore = Instance.new("TextButton")
+        restore.Size = UDim2.new(0, 120, 0, 30)
+        restore.Position = UDim2.new(0.5, -60, 0, 10)
+        restore.BackgroundColor3 = Library.Theme.PrimaryColor
+        restore.BorderColor3 = Library.Theme.BorderColor
+        restore.Text = "🔄 Restore GUI"
+        restore.TextColor3 = Library.Theme.TextColor
+        restore.Font = Library.Theme.BoldFont
+        restore.TextSize = 16
+        restore.ZIndex = 99
+        restore.Parent = Window.ScreenGui
 
-        restoreButton.MouseButton1Click:Connect(function()
+        restore.MouseButton1Click:Connect(function()
             Window.MainFrame.Visible = true
-            restoreButton:Destroy()
+            restore:Destroy()
         end)
     end)
 
-    -- Close Logic
     Window.CloseButton.MouseButton1Click:Connect(function()
         Window.ScreenGui:Destroy()
     end)
 
-    -- Add Tab Function
+    -- Tabs will be added in Part 2
     function Window:AddTab(name)
         local Tab = {}
         Tab.Name = name
         Tab.Elements = {}
 
-        -- Tab Button
         Tab.Button = Instance.new("TextButton")
-        Tab.Button.Size = UDim2.new(0, 80, 1, 0)
+        Tab.Button.Size = UDim2.new(1, 0, 0, 35)
         Tab.Button.BackgroundColor3 = Library.Theme.TabColor
         Tab.Button.Text = name
         Tab.Button.TextColor3 = Library.Theme.TextColor
@@ -159,65 +166,54 @@ function Library:CreateWindow(name, size, position)
         Tab.Button.TextSize = Library.Theme.TextSize
         Tab.Button.Parent = Window.TabBar
 
-        -- Tab Frame
-        Tab.Frame = Instance.new("Frame")
-        Tab.Frame.Size = UDim2.new(1, 0, 1, -60)
-        Tab.Frame.Position = UDim2.new(0, 0, 0, 60)
-        Tab.Frame.BackgroundColor3 = Library.Theme.PrimaryColor
-        Tab.Frame.BorderSizePixel = 0
+        Tab.Frame = Instance.new("ScrollingFrame")
+        Tab.Frame.Size = UDim2.new(1, 0, 1, 0)
+        Tab.Frame.Position = UDim2.new(0, 0, 0, 0)
+        Tab.Frame.BackgroundTransparency = 1
+        Tab.Frame.ScrollBarThickness = 5
         Tab.Frame.Visible = (#Window.Tabs == 0)
-        Tab.Frame.Parent = Window.MainFrame
+        Tab.Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Tab.Frame.Parent = Window.TabContainer
 
-        -- Scrolling Frame for Tab Content
-        Tab.ScrollingFrame = Instance.new("ScrollingFrame")
-        Tab.ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-        Tab.ScrollingFrame.Position = UDim2.new(0, 0, 0, 0)
-        Tab.ScrollingFrame.BackgroundTransparency = 1
-        Tab.ScrollingFrame.ScrollBarThickness = 5
-        Tab.ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
-        Tab.ScrollingFrame.Parent = Tab.Frame
+        local layout = Instance.new("UIListLayout")
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 6)
+        layout.Parent = Tab.Frame
 
-        local tabLayout = Instance.new("UIListLayout")
-        tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        tabLayout.Padding = UDim.new(0, 8) -- Default padding
-        tabLayout.Parent = Tab.ScrollingFrame
-
-        -- Update CanvasSize when elements are added
-        tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Tab.ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y)
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Tab.Frame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
         end)
 
-        -- Tab Switching
         Tab.Button.MouseButton1Click:Connect(function()
-            for _, tab in pairs(Window.Tabs) do
-                tab.Frame.Visible = false
+            for _, t in pairs(Window.Tabs) do
+                t.Frame.Visible = false
             end
             Tab.Frame.Visible = true
         end)
 
-        -- Add Element Function
         function Tab:AddLabel(text)
             local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 100, 0, 30)
+            Label.Size = UDim2.new(1, -20, 0, 30)
             Label.BackgroundTransparency = 1
             Label.Text = text
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.Parent = Tab.ScrollingFrame
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = Tab.Frame
             table.insert(Tab.Elements, Label)
             return Label
         end
 
         function Tab:AddButton(text, callback)
             local Button = Instance.new("TextButton")
-            Button.Size = UDim2.new(0, 100, 0, 35) -- Adjusted to match textbox height
+            Button.Size = UDim2.new(1, -20, 0, 35)
             Button.BackgroundColor3 = Library.Theme.SecondaryColor
             Button.Text = text
             Button.TextColor3 = Library.Theme.TextColor
             Button.Font = Library.Theme.Font
             Button.TextSize = Library.Theme.TextSize
-            Button.Parent = Tab.ScrollingFrame
+            Button.Parent = Tab.Frame
             Button.MouseButton1Click:Connect(callback)
             table.insert(Tab.Elements, Button)
             return Button
@@ -225,14 +221,13 @@ function Library:CreateWindow(name, size, position)
 
         function Tab:AddToggle(text, default, callback)
             local Toggle = Instance.new("TextButton")
-            Toggle.Size = UDim2.new(0, 100, 0, 35) -- Adjusted to match textbox height
+            Toggle.Size = UDim2.new(1, -20, 0, 35)
             Toggle.BackgroundColor3 = Library.Theme.SecondaryColor
             Toggle.Text = default and (text .. ": On") or (text .. ": Off")
             Toggle.TextColor3 = Library.Theme.TextColor
             Toggle.Font = Library.Theme.Font
             Toggle.TextSize = Library.Theme.TextSize
-            Toggle.Parent = Tab.ScrollingFrame
-
+            Toggle.Parent = Tab.Frame
             local state = default
             Toggle.MouseButton1Click:Connect(function()
                 state = not state
@@ -244,124 +239,97 @@ function Library:CreateWindow(name, size, position)
         end
 
         function Tab:AddTextbox(text, default, callback)
+            local Holder = Instance.new("Frame")
+            Holder.Size = UDim2.new(1, -20, 0, 35)
+            Holder.BackgroundTransparency = 1
+            Holder.Parent = Tab.Frame
+
             local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 280, 0, 35) -- Adjusted to fit new textbox size
+            Label.Size = UDim2.new(0.4, -10, 1, 0)
+            Label.Position = UDim2.new(0, 0, 0, 0)
             Label.BackgroundTransparency = 1
             Label.Text = text
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.ClipsDescendants = true
-            Label.Visible = true
-            Label.ZIndex = 5
-            Label.Parent = Tab.ScrollingFrame
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = Holder
 
-            local Textbox = Instance.new("TextBox")
-            Textbox.Size = UDim2.new(0, 180, 0, 35) -- Adjusted size for better usability
-            Textbox.Position = UDim2.new(0, 90, 0, 0)
-            Textbox.BackgroundColor3 = Library.Theme.SecondaryColor
-            Textbox.Text = default or ""
-            Textbox.TextColor3 = Library.Theme.TextColor
-            Textbox.Font = Library.Theme.Font
-            Textbox.TextSize = 16 -- Adjusted text size for readability
-            Textbox.TextWrapped = true
-            Textbox.Visible = true
-            Textbox.ZIndex = 5
-            Textbox.Parent = Label
-
-            -- Safety check to prevent disappearing
-            Textbox:GetPropertyChangedSignal("Visible"):Connect(function()
-                if not Textbox.Visible then
-                    Textbox.Visible = true
-                end
-            end)
-            Label:GetPropertyChangedSignal("Visible"):Connect(function()
-                if not Label.Visible then
-                    Label.Visible = true
-                end
+            local Box = Instance.new("TextBox")
+            Box.Size = UDim2.new(0.6, 0, 1, 0)
+            Box.Position = UDim2.new(0.4, 0, 0, 0)
+            Box.BackgroundColor3 = Library.Theme.SecondaryColor
+            Box.Text = default or ""
+            Box.TextColor3 = Library.Theme.TextColor
+            Box.Font = Library.Theme.Font
+            Box.TextSize = Library.Theme.TextSize
+            Box.Parent = Holder
+            Box.FocusLost:Connect(function()
+                callback(Box.Text)
             end)
 
-            Textbox.FocusLost:Connect(function()
-                callback(Textbox.Text)
-            end)
-            table.insert(Tab.Elements, Label)
-            return Textbox
+            table.insert(Tab.Elements, Holder)
+            return Box
         end
 
         function Tab:AddDropdown(text, options, default, callback)
+            local Holder = Instance.new("Frame")
+            Holder.Size = UDim2.new(1, -20, 0, 35)
+            Holder.BackgroundTransparency = 1
+            Holder.Parent = Tab.Frame
+
             local Label = Instance.new("TextLabel")
-            Label.Size = UDim2.new(0, 280, 0, 35) -- Adjusted to match textbox container size
+            Label.Size = UDim2.new(0.4, -10, 1, 0)
+            Label.Position = UDim2.new(0, 0, 0, 0)
             Label.BackgroundTransparency = 1
             Label.Text = text
             Label.TextColor3 = Library.Theme.TextColor
             Label.Font = Library.Theme.Font
             Label.TextSize = Library.Theme.TextSize
-            Label.ZIndex = 5
-            Label.Parent = Tab.ScrollingFrame
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = Holder
 
             local Dropdown = Instance.new("TextButton")
-            Dropdown.Size = UDim2.new(0, 100, 0, 30)
-            Dropdown.Position = UDim2.new(0, 90, 0, 0)
+            Dropdown.Size = UDim2.new(0.6, 0, 1, 0)
+            Dropdown.Position = UDim2.new(0.4, 0, 0, 0)
             Dropdown.BackgroundColor3 = Library.Theme.SecondaryColor
-            Dropdown.Text = default
+            Dropdown.Text = default or "Select"
             Dropdown.TextColor3 = Library.Theme.TextColor
             Dropdown.Font = Library.Theme.Font
             Dropdown.TextSize = Library.Theme.TextSize
-            Dropdown.ZIndex = 5
-            Dropdown.Parent = Label
+            Dropdown.Parent = Holder
 
-            local DropdownFrame = Instance.new("ScrollingFrame")
-            DropdownFrame.Size = UDim2.new(0, 100, 0, 120)
-            DropdownFrame.Position = UDim2.new(0, 90, 0, 30)
-            DropdownFrame.BackgroundColor3 = Library.Theme.SecondaryColor
-            DropdownFrame.Visible = false
-            DropdownFrame.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
-            DropdownFrame.ScrollBarThickness = 5
-            DropdownFrame.ZIndex = 10
-            DropdownFrame.Parent = Label
+            local List = Instance.new("Frame")
+            List.Size = UDim2.new(0.6, 0, 0, #options * 30)
+            List.Position = UDim2.new(0.4, 0, 1, 0)
+            List.BackgroundColor3 = Library.Theme.SecondaryColor
+            List.Visible = false
+            List.Parent = Holder
 
-            local dropdownLayout = Instance.new("UIListLayout")
-            dropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            dropdownLayout.Parent = DropdownFrame
+            local layout = Instance.new("UIListLayout", List)
+            layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-            for i, option in ipairs(options) do
-                local OptionButton = Instance.new("TextButton")
-                OptionButton.Size = UDim2.new(1, 0, 0, 30)
-                OptionButton.BackgroundTransparency = 1
-                OptionButton.Text = option
-                OptionButton.TextColor3 = Library.Theme.TextColor
-                OptionButton.Font = Library.Theme.Font
-                OptionButton.TextSize = Library.Theme.TextSize
-                OptionButton.ZIndex = 10
-                OptionButton.Parent = DropdownFrame
-
-                OptionButton.MouseButton1Click:Connect(function()
-                    Dropdown.Text = option
-                    DropdownFrame.Visible = false
-                    tabLayout.Padding = UDim.new(0, 8)
-                    callback(option)
+            for _, opt in ipairs(options) do
+                local B = Instance.new("TextButton")
+                B.Size = UDim2.new(1, 0, 0, 30)
+                B.Text = opt
+                B.BackgroundTransparency = 1
+                B.TextColor3 = Library.Theme.TextColor
+                B.Font = Library.Theme.Font
+                B.TextSize = Library.Theme.TextSize
+                B.Parent = List
+                B.MouseButton1Click:Connect(function()
+                    Dropdown.Text = opt
+                    List.Visible = false
+                    callback(opt)
                 end)
             end
 
             Dropdown.MouseButton1Click:Connect(function()
-                local isVisible = not DropdownFrame.Visible
-                DropdownFrame.Visible = isVisible
-                for _, child in pairs(Tab.ScrollingFrame:GetChildren()) do
-                    if child:IsA("TextLabel") then
-                        for _, subChild in pairs(child:GetChildren()) do
-                            if subChild:IsA("ScrollingFrame") and subChild ~= DropdownFrame then
-                                subChild.Visible = false
-                            end
-                        end
-                    end
-                end
-                if isVisible then
-                    tabLayout.Padding = UDim.new(0, 130)
-                else
-                    tabLayout.Padding = UDim.new(0, 8)
-                end
+                List.Visible = not List.Visible
             end)
-            table.insert(Tab.Elements, Label)
+
+            table.insert(Tab.Elements, Holder)
             return Dropdown
         end
 
