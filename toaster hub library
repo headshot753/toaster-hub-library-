@@ -1,4 +1,4 @@
--- Toaster Hub Library (Updated to Fix Disappearing Textboxes)
+-- Toaster Hub Library (Updated to Fix Disappearing Textboxes with Debug)
 
 local Library = {
     Theme = {
@@ -12,8 +12,12 @@ local Library = {
         TextSize = 14,
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
-    }
+    },
+    Version = "2.0" -- Added version identifier
 }
+
+-- Debug print to confirm library version
+print("Toaster Hub Library Version " .. Library.Version .. " loaded")
 
 -- Services
 local UserInputService = game:GetService("UserInputService")
