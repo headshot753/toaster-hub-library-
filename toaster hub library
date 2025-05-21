@@ -1,4 +1,4 @@
--- Toaster Hub Library (Fixed AddToggle ImageColor3 Issue, Enhanced Dropdowns and GUI Layout)
+-- Toaster Hub Library (Fixed AddToggle Title Reference, Enhanced Dropdowns and GUI Layout)
 
 local Library = {
     Theme = {
@@ -13,7 +13,7 @@ local Library = {
         BoldFont = Enum.Font.SourceSansBold,
         BoldTextSize = 18,
     },
-    Version = "2.11"
+    Version = "2.12"
 }
 
 -- Debug print to confirm library version
@@ -534,12 +534,12 @@ function Library:CreateWindow(name, size, position)
                     Off = UDim2.new(0, 2, 0.5, -6)
                 }
                 local frame = Toggle.Button.Frame
-                Toggle.Button.Title.Text = state and (text .. ": On") or (text .. ": Off")
+                Toggle.Title.Text = state and (text .. ": On") or (text .. ": Off")
                 frame.Position = state and position.On or position.Off
 
                 Toggle.MouseButton1Click:Connect(function()
                     state = not state
-                    Toggle.Button.Title.Text = state and (text .. ": On") or (text .. ": Off")
+                    Toggle.Title.Text = state and (text .. ": On") or (text .. ": Off")
                     utility:Tween(frame, {Position = state and position.On or position.Off}, 0.2)
                     callback(state)
                 end)
